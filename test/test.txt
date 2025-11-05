@@ -1,0 +1,8 @@
+The parser should account for the following:
+
+Empty lines
+
+Comments starting with ‘#’ should be ignored.
+
+There may or may not be whitespace (space or tab) around the ‘=’ sign.
+
