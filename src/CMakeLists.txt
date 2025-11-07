@@ -5,10 +5,12 @@ project(numsim)
 
 # Specify the name of the executable (${PROJECT_NAME} which is equal to what was set in the project() command).
 # Also specify the source files.
-add_executable(${PROJECT_NAME}
-   main.cpp
-   output_writer/write_paraview_output.cpp
-)
+add_executable(${PROJECT_NAME} main.cpp)
+add_subdirectory(settings)
+add_subdirectory(output_writer)
+add_subdirectory(pressure_solver)
+add_subdirectory(staggered_grid)
+add_subdirectory(discretization)
 
 # Add the project directory to include directories, to be able to include all project header files from anywhere
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR})
