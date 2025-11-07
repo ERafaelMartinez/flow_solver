@@ -35,9 +35,6 @@
 build/
 .cache/
 
-# IDE configs
-.vscode/
-
 # VTK
 .qt
 
