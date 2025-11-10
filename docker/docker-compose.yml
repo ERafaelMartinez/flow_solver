@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  numsim-dev:
+    build: 
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: numsim-development
+    volumes:
+      - ..:/workspace
+      - numsim-build:/workspace/build
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    environment:
+      - VTK_DIR=/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1
+
+volumes:
+  numsim-build:

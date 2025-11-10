@@ -22,7 +22,7 @@ install:
 	cd $(BUILD_DIR) && make install
 
 clean_install:
-	cd $(BUILD_DIR) && make clean
+	@if [ -f $(BUILD_DIR)/Makefile ]; then cd $(BUILD_DIR) && make clean; fi
 
 clean_all:
 	rm -rf $(BUILD_DIR)
