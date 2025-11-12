@@ -47,3 +47,5 @@ protected:
     std::array<double,2> meshWidth_;
     FieldVariable u_, v_, p_, rhs_, f_, g_;
 };
+
+#endif  // STAGGEREDGRID_H
