@@ -2,7 +2,7 @@
 #include <cassert>
 
 
-Discretization::Discretization(std::array<int, 2> nCells, std::array<double,2> meshWidth)
+Discretization::Discretization(const std::array<int, 2>& nCells, const std::array<double, 2>& meshWidth)
     : StaggeredGrid(nCells, meshWidth)
 {
 }
@@ -10,6 +10,13 @@ Discretization::Discretization(std::array<int, 2> nCells, std::array<double,2> m
 
 Discretization::~Discretization() {}
 
+const std::array<int, 2>& Discretization::getNCells() const {
+    return nCells_;
+}
+
+const std::array<double, 2>& Discretization::getMeshWidth() const {
+    return meshWidth_;
+}
 
  // compute 2nd derivative ∂^2(u)/∂x^2 
 double Discretization::computeD2uDx2(int i, int j) const

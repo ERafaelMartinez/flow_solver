@@ -44,6 +44,10 @@ double computeD2vDy2(int i, int j) const;
 double computeDpDx(int i, int j) const;
 double computeDpDy(int i, int j) const;
 
+// 0. Accessor für Gittergrößen
+const std::array<int, 2>& getNCells() const;
+const std::array<double, 2>& getMeshWidth() const;
+
 };
 
 #endif
