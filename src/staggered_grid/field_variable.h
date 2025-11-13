@@ -1,21 +1,19 @@
 #pragma once
 
-#ifndef FIELDVARIABLE_H
-#define FIELDVARIABLE_H
-
-#include <array> 
 #include "array2d.h"
+
+#include <array>
 
 class FieldVariable : public Array2D
 {
 public:
-FieldVariable (std::array< int, 2 > size, std::array< double, 2 > origin, std::array< double, 2 > meshWidth);
-   
-double 	interpolateAt (double x, double y) const;   // get the value at the Cartesian coordinate (x,y)
+    FieldVariable(std::array<int, 2> gridSize,
+                  std::array<double, 2> offset,
+                  std::array<double, 2> cellSize);
+
+    double interpolateAt(double x, double y) const;
 
 private:
-    std::array< double, 2 > origin_;     // Origin of the field variable
-    std::array< double, 2 > meshWidth_;  // Mesh width in each dimension
+    const std::array<double, 2> _cellSize;
+    const std::array<double, 2> _offset;
 };
-
-#endif

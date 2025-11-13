@@ -1,55 +1,94 @@
 #pragma once
 
-#ifndef STAGGEREDGRID_H
-#define STAGGEREDGRID_H
-
-#include <array> 
 #include "field_variable.h"
 
-class StaggeredGrid : public FieldVariable
-{
+
+class StaggeredGrid {
+private:
+  enum INDEX_TYPE { I_BEGIN, I_END, J_BEGIN, J_END };
+
+  // {top, right, bottom, left}
+  std::array<int, 4> _uBoundaries = {1, 0, 1, 1};
+  std::array<int, 4> _vBoundaries = {0, 1, 1, 1};
+  std::array<int, 4> _pBoundaries = {1, 1, 1, 1};
+  std::array<int, 4> _rhsBoundaries = {1, 1, 1, 1};
+  std::array<int, 4> _fBoundaries = {1, 0, 1, 1};
+  std::array<int, 4> _gBoundaries = {0, 1, 1, 1};
+
+  FieldVariable _u;
+  FieldVariable _v;
+  FieldVariable _p;
+  FieldVariable _rhs;
+  FieldVariable _g;
+  FieldVariable _f;
+
+  std::array<int, 2> _gridSize;
+  std::array<double, 2> _cellSize;
+
+  std::array<int, 2> getVarGridSize(std::array<int, 2> gridSize,
+                                    std::array<int, 4> boundaries) const {
+    return {gridSize[0] + _uBoundaries[1] + _uBoundaries[3],
+            gridSize[1] + _uBoundaries[0] + _uBoundaries[2]};
+  }
+
+  int getInnerIndex(FieldVariable var, std::array<int, 4> boundaries,
+                    INDEX_TYPE index_type) const {
+    switch (index_type) {
+    case I_BEGIN: {
+      return 0 + boundaries[3];
+    }
+    case I_END: {
+      return var.size()[0] - boundaries[1];
+    }
+    case J_BEGIN: {
+      return 0 + boundaries[2];
+    }
+    case J_END: {
+      return var.size()[1] - boundaries[0];
+    }
+    }
+  }
+
 public:
-    StaggeredGrid(std::array<int,2> nCells, std::array<double,2> meshWidth);
-       
-    const std::array< double, 2 > 	meshWidth () const;   // get the mesh width, i.e. the length of a single cell in x and y direction
-    const std::array< int, 2 > 	nCells () const;          // get number of cells in each coordinate direction
-    const FieldVariable & 	u () const;                   // get a reference to field variable u
-    const FieldVariable & 	v () const;                   // get a reference to field variable v
-    const FieldVariable & 	p () const;                   // get a reference to field variable p
-    const FieldVariable & 	f () const;                   // get a reference to field variable f
-    const FieldVariable & 	g () const;                   // get a reference to field variable g
-    const FieldVariable & 	rhs () const;                 // get a reference to field variable rhs
-  
-    double u(int i, int j) const;                         // access value of u in element (i,j)
-    double& u(int i, int j);                              // access value of u in element (x,y)
-    double v(int i, int j) const;                         // access value of v in element (i,j)
-    double& v(int i, int j);                              // access value of v in element (x,y)
-    double p(int i, int j) const;                         // access value of p in element (i,j)
-    double& p(int i, int j);                              // access value of p in element (x,y)
-    double & rhs (int i, int j);                          // access value of rhs in element (i,j)
-    double & f (int i, int j);                            // access value of f in element (i,j)
-    double & g (int i, int j);                            // access value of g in element (i,j)
-    double 	dx () const;                                  // get the mesh width in x-direction, δx 
-    double 	dy () const;                                  // get the mesh width in y-direction, δy
-    
-    int uIBegin () const;                                 // first valid index for u in x direction
-    int uIEnd () const;                                   // one after last valid index for u in x direction
-    int uJBegin () const;                                 // first valid index for u in y direction
-    int uJEnd () const;                                   // one after last valid index for u in y
-    int vIBegin () const;                                 // first valid index for v in x direction
-    int vIEnd () const;                                   // one after last valid index for v in x direction
-    int vJBegin () const;                                 // first valid index for v in y direction
-    int vJEnd () const;                                   // one after last valid index for v in y
-    int pIBegin () const;                                 // first valid index for p in x direction
-    int pIEnd () const;                                   // one after last valid index for p in x direction
-    int pJBegin () const;                                 // first valid index for p in y direction
-    int pJEnd () const;                                   // one after last valid index for p in y
+  StaggeredGrid(std::array<int, 2> gridSize, std::array<double, 2> cellSize);
 
+  std::array<int, 2> gridSize() const { return _gridSize; }
+  std::array<double, 2> cellSize() const { return _cellSize; }
 
-protected:
-    std::array<int,2> nCells_;
-    std::array<double,2> meshWidth_;
-    FieldVariable u_, v_, p_, rhs_, f_, g_;
+  FieldVariable u() const { return _u; }
+  FieldVariable v() const { return _v; }
+  FieldVariable p() const { return _p; }
+  FieldVariable rhs() const { return _rhs; }
+  FieldVariable g() const { return _g; }
+  FieldVariable f() const { return _f; }
+
+  int uIBegin() const { return getInnerIndex(_u, _uBoundaries, I_BEGIN); }
+  int uIEnd() const { return getInnerIndex(_u, _uBoundaries, I_END); }
+  int uJBegin() const { return getInnerIndex(_u, _uBoundaries, J_BEGIN); }
+  int uJEnd() const { return getInnerIndex(_u, _uBoundaries, J_END); }
+
+  int vIBegin() const { return getInnerIndex(_v, _vBoundaries, I_BEGIN); }
+  int vIEnd() const { return getInnerIndex(_v, _vBoundaries, I_END); }
+  int vJBegin() const { return getInnerIndex(_v, _vBoundaries, J_BEGIN); }
+  int vJEnd() const { return getInnerIndex(_v, _vBoundaries, J_END); }
+
+  int pIBegin() const { return getInnerIndex(_p, _pBoundaries, I_BEGIN); }
+  int pIEnd() const { return getInnerIndex(_p, _pBoundaries, I_END); }
+  int pJBegin() const { return getInnerIndex(_p, _pBoundaries, J_BEGIN); }
+  int pJEnd() const { return getInnerIndex(_p, _pBoundaries, J_END); }
+
+  int rhsIBegin() const { return getInnerIndex(_rhs, _rhsBoundaries, I_BEGIN); }
+  int rhsIEnd() const { return getInnerIndex(_rhs, _rhsBoundaries, I_END); }
+  int rhsJBegin() const { return getInnerIndex(_rhs, _rhsBoundaries, J_BEGIN); }
+  int rhsJEnd() const { return getInnerIndex(_rhs, _rhsBoundaries, J_END); }
+
+  int gIBegin() const { return getInnerIndex(_g, _gBoundaries, I_BEGIN); }
+  int gIEnd() const { return getInnerIndex(_g, _gBoundaries, I_END); }
+  int gJBegin() const { return getInnerIndex(_g, _gBoundaries, J_BEGIN); }
+  int gJEnd() const { return getInnerIndex(_g, _gBoundaries, J_END); }
+
+  int fIBegin() const { return getInnerIndex(_f, _fBoundaries, I_BEGIN); }
+  int fIEnd() const { return getInnerIndex(_f, _fBoundaries, I_END); }
+  int fJBegin() const { return getInnerIndex(_f, _fBoundaries, J_BEGIN); }
+  int fJEnd() const { return getInnerIndex(_f, _fBoundaries, J_END); }
 };
-
-#endif  // STAGGEREDGRID_H

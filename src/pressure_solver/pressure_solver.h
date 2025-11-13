@@ -1,7 +1,7 @@
+#pragma once
+
 //In this file, we define the PressureSolver class interface
 #include "discretization/discretization.h"
-#include "staggered_grid/field_variable.h"
-#include "settings/settings.h"
 
 
 /* This class defines the interface for pressure solvers in the numerical simulation framework.
@@ -19,6 +19,8 @@ public:
     discretization_(discretization),
     convergence_tol_(convergence_tol_), 
     max_iterations_(max_iterations_) {}
+
+   virtual ~PressureSolver() {}
 
     /**
      * @brief Calculate the pressure for one iteration.

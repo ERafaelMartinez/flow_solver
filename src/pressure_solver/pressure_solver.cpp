@@ -5,19 +5,6 @@
    method to solve the pressure Poisson equation in a numerical simulation framework.
 */
 
-// Constructor
-PressureSolver::PressureSolver(
-      Discretization* discretization,
-      double* convergence_tol_,
-      int* max_iterations_
-   ) :
-   discretization_(discretization),
-   convergence_tol_(convergence_tol_),
-   max_iterations_(max_iterations_) {}
-
-// Destructor
-PressureSolver::~PressureSolver() {}
-
 // solve pressure equation until convergence
 void PressureSolver::solvePressureEquation() {
     int iteration = 0;
