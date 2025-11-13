@@ -1,5 +1,4 @@
 #include "donor_cell.h"
-#include "central_differences.h"
 
 #include <cassert>
 
@@ -17,13 +16,13 @@ double DonorCell::computeDu2Dx(int i, int j) const {
   const double uDiffRight = (u().at(i, j) - u().at(i + 1, j)) / 2.;
   const double uDiffLeft = (u().at(i - 1, j) - u().at(i, j)) / 2.;
 
-  // TODO: remove weird dep
-  CentralDifferences cent(gridSize(), cellSize());
-  const double central = cent.computeDu2Dx(i, j);
+  const double central = (uRight * uRight) - (uLeft * uLeft);
   const double correction =
       ((abs(uRight) * uDiffRight) - (abs(uLeft) * uDiffLeft));
+
   return central + (1. / dx) * alpha_ * correction;
 }
+
 // compute the 1st derivative ∂(v^2)/∂y
 double DonorCell::computeDv2Dy(int i, int j) const {
   const double dy = cellSize()[1];
@@ -32,14 +31,13 @@ double DonorCell::computeDv2Dy(int i, int j) const {
   const double vDiffTop = (v().at(i, j) - v().at(i, j + 1)) / 2.;
   const double vDiffBottom = (v().at(i, j - 1) - v().at(i, j)) / 2.;
 
-  // TODO: remove weird dep
-  CentralDifferences cent(gridSize(), cellSize());
-  const double central = cent.computeDv2Dy(i, j);
+  const double central = (vTop * vTop) - (vBottom * vBottom);
   const double correction =
       ((abs(vTop) * vDiffTop) - (abs(vBottom) * vDiffBottom));
 
   return central + (1. / dy) * alpha_ * correction;
 }
+
 // compute the 1st derivative ∂ (uv) / ∂x
 double DonorCell::computeDuvDx(int i, int j) const {
   const double dx = cellSize()[0];
@@ -48,14 +46,13 @@ double DonorCell::computeDuvDx(int i, int j) const {
   const double vDiffRight = (v().at(i, j) - v().at(i + 1, j)) / 2.;
   const double vDiffLeft = (v().at(i - 1, j) - v().at(i, j)) / 2.;
 
-  // TODO: remove weird dep
-  CentralDifferences cent(gridSize(), cellSize());
-  const double central = cent.computeDuvDx(i, j);
+  const double central = (uTopRight * vDiffRight) - (uTopLeft * vDiffLeft);
   const double correction =
       (abs(uTopRight) * vDiffRight) - (abs(uTopLeft) * vDiffLeft);
 
   return central + (1. / dx) * alpha_ * correction;
 }
+
 // compute the 1st derivative ∂ (uv) / ∂y
 double DonorCell::computeDuvDy(int i, int j) const {
   const double dy = cellSize()[1];
@@ -64,9 +61,7 @@ double DonorCell::computeDuvDy(int i, int j) const {
   const double uDiffTop = (u().at(i, j) - u().at(i, j + 1)) / 2.;
   const double uDiffBottom = (u().at(i, j - 1) - u().at(i, j)) / 2.;
 
-  // TODO: remove weird dep
-  CentralDifferences cent(gridSize(), cellSize());
-  const double central = cent.computeDuvDy(i, j);
+  const double central = (vTopRight * uDiffTop) - (vBottomRight * uDiffBottom);
   const double correction =
       (abs(vTopRight) * uDiffTop) - (abs(vBottomRight) * uDiffBottom);
 
