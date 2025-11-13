@@ -20,13 +20,28 @@ public:
     convergence_tol_(convergence_tol_), 
     max_iterations_(max_iterations_) {}
 
-    // Method to calculate the pressure for one iteration
+    /**
+     * @brief Calculate the pressure for one iteration.
+     * 
+     * This is a pure virtual method that must be implemented by derived classes.
+     * It performs the pressure calculation for a single iteration step.
+     */
     virtual void calcPressureIter() = 0;
 
-    // Method to perform multiple iterations until convergence
+    /**
+     * @brief Perform multiple iterations until convergence.
+     * 
+     * This method iteratively solves the pressure equation until the solution
+     * converges or the maximum number of iterations is reached.
+     */
     void solvePressureEquation();
 
-    // Method to check for convergence
+    /**
+     * @brief Check if the solution has converged.
+     * 
+     * This method evaluates whether the solution meets the convergence criteria.
+     * @return True if the solution has converged, false otherwise.
+     */
     bool solutionHasConverged();
 
 protected:

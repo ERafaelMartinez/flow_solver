@@ -21,8 +21,8 @@ void GaussSeidelPressureSolver::calcPressureIter() {
     double coeff = dx*dx * dy*dy / (2 * (dx*dx + dy*dy));
 
     *res_ = 0.0; // Reset residual for this iteration
-    for (int j = 1; j < Ny-1; ++j)
-        for (int i = 1; i < Nx-1; ++i){
+    for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); ++j)
+        for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); ++i){
             discretization_->p(i, j) = coeff * (
                 (discretization_->p(i-1, j) + discretization_->p(i+1, j)) / (dx*dx) +
                 (discretization_->p(i, j-1) + discretization_->p(i, j+1)) / (dy*dy) -
