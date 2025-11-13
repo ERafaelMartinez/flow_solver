@@ -200,11 +200,62 @@ double Simulation::computeNextTimeStepSize() {
 // poisson equation
 void Simulation::computeRHS() {
     // Implementation of RHS computation goes here
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+    double dt = time_step_; 
+
+    FieldVariable F = discretization_->f();
+    FieldVariable G = discretization_->g();
+    FieldVariable rhs = discretization_->rhs();
+
+    for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); ++i) {
+        for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); ++j) {
+            rhs(i, j) = 1./dt * ((F(i, j) - F(i - 1, j)) / dx + 
+                                 (G(i, j) - G(i, j - 1)) / dy);
+        }
+    }
 }
 
 // Method to compute the intermediate velocities F, G
 void Simulation::computeIntermediateVelocities() {
     // Implementation of intermediate velocity computation goes here
+    double dt = time_step_;
+    double Re = settings_->re;
+    double gx = settings_->g[0];
+    double gy = settings_->g[1];
+
+    FieldVariable u = discretization_->u();
+    FieldVariable v = discretization_->v();
+    FieldVariable F = discretization_->f();
+    FieldVariable G = discretization_->g();
+
+    for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
+        for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd(); ++j) {
+            // Compute F(i,j)
+            double d2udx2 = discretization_->computeD2uDx2(i, j);
+            double d2udy2 = discretization_->computeD2uDy2(i, j);
+            double du2dx = discretization_->computeDu2Dx(i, j);
+            double duvdy = discretization_->computeDuvDy(i, j);
+            
+            F(i, j) = u(i, j) + dt * (
+                (1./Re) * (d2udx2 + d2udy2) - du2dx - duvdy + gx
+            );
+        }
+    }
+
+    for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
+        for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd(); ++j) {
+            // Compute G(i,j)
+            double d2vdx2 = discretization_->computeD2vDx2(i, j);
+            double d2vdy2 = discretization_->computeD2vDy2(i, j);
+            double dv2dy = discretization_->computeDv2Dy(i, j);
+            double duvdx = discretization_->computeDuvDx(i, j);
+
+            G(i, j) = v(i, j) + dt * (
+                (1./Re) * (d2vdx2 + d2vdy2) - dv2dy - duvdx + gy
+            );
+        }
+    }
 }
 
 // Solve the pressure equation
@@ -215,6 +266,31 @@ void Simulation::solvePressureEquation() {
 // Recalculate the velocities based on the new pressure field
 void Simulation::computeVelocities() {
     // Implementation of velocity computation goes here
+    double dx = discretization_->dx();
+    double dy = discretization_->dy();
+    double dt = time_step_;
+
+    FieldVariable u = discretization_->u();
+    FieldVariable v = discretization_->v();
+    FieldVariable F = discretization_->f();
+    FieldVariable G = discretization_->g();
+    FieldVariable p = discretization_->p();
+
+    for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
+        for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd(); ++j) {
+            double dpdx = discretization_->computeDpDx(i, j);
+            u(i, j) = F(i, j) - dt * dpdx;
+        }
+    }
+
+    for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
+        for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd(); ++j) {
+            double dpdy = discretization_->computeDpDy(i, j);
+            v(i, j) = G(i, j) - dt * dpdy;
+        }
+    }
+
+
 }
 
 // Output the current state of the simulation
