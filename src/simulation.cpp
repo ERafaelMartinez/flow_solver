@@ -189,9 +189,11 @@ double Simulation::computeNextTimeStepSize() {
             discretization_->v().data().end(),
             [](double a, double b) { return std::abs(a) < std::abs(b); }
         );
-
     double conv_dt_u = dx / std::abs(u_max);
     double conv_dt_v = dy / std::abs(v_max);
+    double conv_dt = std::min(conv_dt_u, conv_dt_v);
+    
+    return std::min(diff_dt, conv_dt) * settings_->tau;  // take the smallest and scale with safety factor
 }
 
 // Compute the right-hand side for the pressure 
