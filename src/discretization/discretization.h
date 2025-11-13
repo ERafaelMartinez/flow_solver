@@ -3,7 +3,6 @@
 #include "staggered_grid/staggered_grid.h"
 
 #include <array> 
-#include "staggered_grid.h"
 
 class Discretization : public StaggeredGrid 
 {
@@ -44,5 +43,3 @@ double computeDpDx(int i, int j) const;
 double computeDpDy(int i, int j) const;
 
 };
-
-#endif
