@@ -1,9 +1,12 @@
+#pragma once
+
 #include "field_variable.h"
 
-enum INDEX_TYPE { I_BEGIN, I_END, J_BEGIN, J_END };
 
 class StaggeredGrid {
 private:
+  enum INDEX_TYPE { I_BEGIN, I_END, J_BEGIN, J_END };
+
   // {top, right, bottom, left}
   std::array<int, 4> _uBoundaries = {1, 0, 1, 1};
   std::array<int, 4> _vBoundaries = {0, 1, 1, 1};
