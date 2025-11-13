@@ -219,6 +219,43 @@ void Simulation::computeVelocities() {
 
 // Output the current state of the simulation
 // using the OutputWritter class
-void Simulation::outputSimulationState() {
+void Simulation::outputSimulationState(int outputIndex) {
     // Implementation of output writing goes here
+}
+
+
+// run simulation timestep
+void Simulation::runTimestep(int stepNumber) {
+    // 1. Apply boundary conditions for velocity, pressure,
+    //    and intermediate velocity fields
+    setBoundaryConditionsVelocity();
+    setBoundaryConditionsPressure();
+
+    // 2. Compute next time step size
+    time_step_ = computeNextTimeStepSize();
+    simulation_time_ += time_step_;
+
+    // 3. Compute intermediate velocities F, G
+    computeIntermediateVelocities();
+
+    // 4. Compute RHS for pressure poisson equation
+    computeRHS();
+
+    // 5. Solve pressure equation
+    solvePressureEquation();
+
+    // 6. Compute velocities based on new pressure field
+    computeVelocities();
+
+    // 7. Output current state of the simulation
+    outputSimulationState(stepNumber);
+}
+
+// run the full simulation
+void Simulation::run() {
+    int stepNumber = 0;
+    while (simulation_time_ < settings_->endTime) {
+        runTimestep(stepNumber);
+        stepNumber++;
+    }
 }

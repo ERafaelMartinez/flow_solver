@@ -44,9 +44,11 @@ public:
 
     // Output the current state of the simulation
     // using the OutputWritter class
-    void outputSimulationState();
+    void outputSimulationState(int outputIndex);
 
-    void runSimulationLoop();
+    void runTimestep(int stepNumber);
+
+    void run();
 
 private:
     Settings* settings_;

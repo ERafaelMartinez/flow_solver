@@ -100,9 +100,9 @@ The following document provides an overview of the architecture of the numerical
 
                 - Implement the system's differential equations in discretized form to set up the pressure Poisson equation.
 
-                - Implement methods to apply boundary conditions specific to the pressure and velocity fields.
+                - Declare method(s) to apply/set boundary conditions specific to the pressure and velocity fields.
 
-                - Declare a virtual method which solves a single iteration of the pressure Poisson equation.
+                - Declare a method which solves a single iteration of the pressure Poisson equation.
 
                 - Declare a method to perform multiple iterations until convergence is reached or a maximum number of iterations is met.
 
