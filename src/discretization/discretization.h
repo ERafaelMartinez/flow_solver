@@ -1,7 +1,6 @@
 #pragma once
 
-#ifndef DISCRETIZATION_H
-#define DISCRETIZATION_H
+#include "staggered_grid/staggered_grid.h"
 
 #include <array> 
 #include "staggered_grid.h"
