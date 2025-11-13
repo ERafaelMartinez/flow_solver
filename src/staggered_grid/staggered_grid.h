@@ -16,6 +16,9 @@ public:
     const FieldVariable & 	u () const;                   // get a reference to field variable u
     const FieldVariable & 	v () const;                   // get a reference to field variable v
     const FieldVariable & 	p () const;                   // get a reference to field variable p
+    const FieldVariable & 	f () const;                   // get a reference to field variable f
+    const FieldVariable & 	g () const;                   // get a reference to field variable g
+    const FieldVariable & 	rhs () const;                 // get a reference to field variable rhs
   
     double u(int i, int j) const;                         // access value of u in element (i,j)
     double& u(int i, int j);                              // access value of u in element (x,y)
@@ -28,6 +31,7 @@ public:
     double & g (int i, int j);                            // access value of g in element (i,j)
     double 	dx () const;                                  // get the mesh width in x-direction, δx 
     double 	dy () const;                                  // get the mesh width in y-direction, δy
+    
     int uIBegin () const;                                 // first valid index for u in x direction
     int uIEnd () const;                                   // one after last valid index for u in x direction
     int uJBegin () const;                                 // first valid index for u in y direction
