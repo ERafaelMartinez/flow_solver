@@ -1,3 +1,6 @@
+#pragma once
+
+#include "discretization/discretization.h"
 #include "pressure_solver.h"
 
 /* This file declares the SORPressureSolver class, which is a specific implementation of the 
@@ -7,7 +10,11 @@
 class SORPressureSolver : public PressureSolver {
 public:
     // Constructor
-    SORPressureSolver(Discretization* discretization = nullptr);
+    SORPressureSolver(std::shared_ptr<Discretization> discretization,
+        double convergence_tol,
+        int max_iterations,
+        double omega
+    );
 
     /**
      * @brief Calculate the pressure for one iteration using SOR.
@@ -35,5 +42,5 @@ public:
     bool solutionHasConverged();
 
 private:
-    // Private members specific to SOR implementation
+    double omega_;  // Relaxation factor for SOR
 };
