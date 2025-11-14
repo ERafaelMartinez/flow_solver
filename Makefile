@@ -10,6 +10,9 @@ prestine_debug: clean_all cmake_debug install
 
 prestine_release: clean_all cmake_release install
 
+run: 
+	cd $(BUILD_DIR) && ./numsim ../parameters.txt
+
 cmake_debug:
 	mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug ..
