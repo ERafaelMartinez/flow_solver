@@ -27,8 +27,8 @@ private:
 
   std::array<int, 2> getVarGridSize(std::array<int, 2> gridSize,
                                     std::array<int, 4> boundaries) const {
-    return {gridSize[0] + _uBoundaries[1] + _uBoundaries[3],
-            gridSize[1] + _uBoundaries[0] + _uBoundaries[2]};
+    return {gridSize[0] + boundaries[1] + boundaries[3],
+            gridSize[1] + boundaries[0] + boundaries[2]};
   }
 
   int getInnerIndex(FieldVariable var, std::array<int, 4> boundaries,
