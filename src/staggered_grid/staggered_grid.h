@@ -38,13 +38,13 @@ private:
       return 0 + boundaries[3];
     }
     case I_END: {
-      return var.size()[0] - boundaries[1];
+      return var.size()[0] - boundaries[1] - 1;
     }
     case J_BEGIN: {
       return 0 + boundaries[2];
     }
     case J_END: {
-      return var.size()[1] - boundaries[0];
+      return var.size()[1] - boundaries[0] - 1;
     }
     }
   }
