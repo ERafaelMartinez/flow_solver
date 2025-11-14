@@ -92,11 +92,11 @@ void Simulation::setBoundaryConditionsVelocity() {
     // it explicitly on the final valid point and propagate it to
     // the ghost cell as well.
     v.at(i, discretization_->vJEnd()) = dirichletBcTop[1];
-    v.at(i, discretization_->vJEnd() + 1) = dirichletBcTop[1];
+    // v.at(i, discretization_->vJEnd() + 1) = dirichletBcTop[1];
     // G's boundary condition is derived/chosen from the Neumann BC for p:
     // g(i, jmax) = v(i, jmax) = dirichletBcTop[1]
     g.at(i, discretization_->vJEnd()) = dirichletBcTop[1];
-    g.at(i, discretization_->vJEnd() + 1) = dirichletBcTop[1];
+    // g.at(i, discretization_->vJEnd() + 1) = dirichletBcTop[1];
   }
 
   // Apply left and right boundary conditions
@@ -125,7 +125,7 @@ void Simulation::setBoundaryConditionsVelocity() {
     // the end point of the domain is directly at the boundary
     // so we set it directly and propagate to the ghost cell
     u.at(discretization_->uIEnd(), j) = dirichletBcRight[0];
-    u.at(discretization_->uIEnd() + 1, j) = dirichletBcRight[0];
+    // u.at(discretization_->uIEnd() + 1, j) = dirichletBcRight[0];
     // For v, we set the ghost cell value such that the average
     // with the last domain point yields the desired BC at the boundary
     // v(end, j) = 2*v_rbc - v(end-1,j
@@ -134,7 +134,7 @@ void Simulation::setBoundaryConditionsVelocity() {
     // F's boundary condition is derived/chosen from the Neumann BC for p:
     // f(imax, j) = u(imax, j) = dirichletBcRight[0];
     f.at(discretization_->uIEnd(), j) = dirichletBcRight[0];
-    f.at(discretization_->uIEnd() + 1, j) = dirichletBcRight[0];
+    // f.at(discretization_->uIEnd() + 1, j) = dirichletBcRight[0];
   }
 }
 
@@ -236,13 +236,33 @@ void Simulation::computeIntermediateVelocities() {
   FieldVariable F = discretization_->f();
   FieldVariable G = discretization_->g();
 
-  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
+#ifndef NDEBUG
+  std::cout << "\t\t Computing F..." << std::endl;
+#endif
+  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd() - 1; ++i) {
     for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd();
          ++j) {
+
+#ifndef NDEBUG
+      std::cout << "\t\t\t" << i << ", " << j << std::endl;
+#endif
+
       // Compute F(i,j)
+#ifndef NDEBUG
+      std::cout << "\t\t\t\t" << "d2udx2" << std::endl;
+#endif
       double d2udx2 = discretization_->computeD2uDx2(i, j);
+#ifndef NDEBUG
+      std::cout << "\t\t\t\t" << "d2udy2" << std::endl;
+#endif
       double d2udy2 = discretization_->computeD2uDy2(i, j);
+#ifndef NDEBUG
+      std::cout << "\t\t\t\t" << "du2dx" << std::endl;
+#endif
       double du2dx = discretization_->computeDu2Dx(i, j);
+#ifndef NDEBUG
+      std::cout << "\t\t\t\t" << "duvdy" << std::endl;
+#endif
       double duvdy = discretization_->computeDuvDy(i, j);
 
       F.at(i, j) = u.at(i, j) +
@@ -250,8 +270,11 @@ void Simulation::computeIntermediateVelocities() {
     }
   }
 
+#ifndef NDEBUG
+  std::cout << "\t\t Computing G..." << std::endl;
+#endif
   for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
-    for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd();
+    for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd() - 1;
          ++j) {
       // Compute G(i,j)
       double d2vdx2 = discretization_->computeD2vDx2(i, j);
@@ -283,7 +306,7 @@ void Simulation::computeVelocities() {
   FieldVariable G = discretization_->g();
   FieldVariable p = discretization_->p();
 
-  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
+  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd() - 1; ++i) {
     for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd();
          ++j) {
       double dpdx = discretization_->computeDpDx(i, j);
@@ -292,7 +315,7 @@ void Simulation::computeVelocities() {
   }
 
   for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
-    for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd();
+    for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd() - 1;
          ++j) {
       double dpdy = discretization_->computeDpDy(i, j);
       v.at(i, j) = G.at(i, j) - dt * dpdy;
@@ -312,26 +335,51 @@ void Simulation::outputSimulationState(int outputIndex) {
 void Simulation::runTimestep(int stepNumber) {
   // 1. Apply boundary conditions for velocity, pressure,
   //    and intermediate velocity fields
-  setBoundaryConditionsVelocity();
-  setBoundaryConditionsPressure();
+#ifndef NDEBUG
+  std::cout << "Simulation step " << stepNumber << ":" << std::endl;
+#endif
+
+#ifndef NDEBUG
+  std::cout << "\tSetting boundaries..." << std::endl;
+#endif
+  // setBoundaryConditionsVelocity();
+  // setBoundaryConditionsPressure();
 
   // 2. Compute next time step size
+#ifndef NDEBUG
+  std::cout << "\tComputing timestep..." << std::endl;
+#endif
   time_step_ = computeNextTimeStepSize();
   simulation_time_ += time_step_;
 
   // 3. Compute intermediate velocities F, G
+#ifndef NDEBUG
+  std::cout << "\tComputing intermediate velocities..." << std::endl;
+#endif
   computeIntermediateVelocities();
 
   // 4. Compute RHS for pressure poisson equation
+#ifndef NDEBUG
+  std::cout << "\tComputing rhs..." << std::endl;
+#endif
   computeRHS();
 
   // 5. Solve pressure equation
+#ifndef NDEBUG
+  std::cout << "\tSolving pressure equation..." << std::endl;
+#endif
   solvePressureEquation();
 
   // 6. Compute velocities based on new pressure field
+#ifndef NDEBUG
+  std::cout << "\tComputing velocities..." << std::endl;
+#endif
   computeVelocities();
 
   // 7. Output current state of the simulation
+#ifndef NDEBUG
+  std::cout << "\tWriting simulation..." << std::endl;
+#endif
   outputSimulationState(stepNumber);
 }
 
