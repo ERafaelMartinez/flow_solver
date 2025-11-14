@@ -1,6 +1,7 @@
 #pragma once
 
 #include "field_variable.h"
+#include <stdexcept>
 
 
 class StaggeredGrid {
@@ -46,6 +47,8 @@ private:
     case J_END: {
       return var.size()[1] - boundaries[0] - 1;
     }
+    default:
+      throw std::invalid_argument("Invalid INDEX_TYPE value");
     }
   }
 
@@ -55,12 +58,23 @@ public:
   std::array<int, 2> gridSize() const { return _gridSize; }
   std::array<double, 2> cellSize() const { return _cellSize; }
 
-  FieldVariable u() const { return _u; }
-  FieldVariable v() const { return _v; }
-  FieldVariable p() const { return _p; }
-  FieldVariable rhs() const { return _rhs; }
-  FieldVariable g() const { return _g; }
-  FieldVariable f() const { return _f; }
+  FieldVariable& u() { return _u; }
+  const FieldVariable& u() const { return _u; }
+
+  FieldVariable& v() { return _v; }
+  const FieldVariable& v() const { return _v; }
+
+  FieldVariable& p() { return _p; }
+  const FieldVariable& p() const { return _p; }
+
+  FieldVariable& rhs() { return _rhs; }
+  const FieldVariable& rhs() const { return _rhs; }
+
+  FieldVariable& g() { return _g; }
+  const FieldVariable& g() const { return _g; }
+
+  FieldVariable& f() { return _f; }
+  const FieldVariable& f() const { return _f; }
 
   int uIBegin() const { return getInnerIndex(_u, _uBoundaries, I_BEGIN); }
   int uIEnd() const { return getInnerIndex(_u, _uBoundaries, I_END); }

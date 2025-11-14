@@ -13,6 +13,8 @@ public:
 
     double interpolateAt(double x, double y) const;
 
+    double maxMagnitude();
+
 private:
     const std::array<double, 2> _cellSize;
     const std::array<double, 2> _offset;

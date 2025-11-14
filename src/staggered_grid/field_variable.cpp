@@ -1,5 +1,6 @@
 #include "field_variable.h"
 
+#include <algorithm>
 #include <cassert>
 
 // from https://stackoverflow.com/a/4353537
@@ -20,8 +21,8 @@ double FieldVariable::interpolateAt(double physicalXPos,
   auto position_on_grid_y = physicalYPos / _cellSize[1] - _offset[1];
 
   // get the cell index by simply casting to int
-  size_t cell_i = position_on_grid_x;
-  size_t cell_j = position_on_grid_y;
+  std::size_t cell_i = position_on_grid_x;
+  std::size_t cell_j = position_on_grid_y;
 
   // ! panic if the cell is outside the grid
   assert(cell_i < 0);
@@ -40,4 +41,14 @@ double FieldVariable::interpolateAt(double physicalXPos,
   auto vertical = lerp(lowerEdge, upperEdge, dy);
 
   return vertical;
+}
+
+
+double FieldVariable::maxMagnitude() {
+  double max_val = 0.0;
+  for (int i = 0; i <= size()[0]*size()[1]; ++i) {
+    double ith_val = data()[i];
+    if (std::abs(ith_val) > max_val) {max_val = std::abs(ith_val);}
+  }
+  return max_val;
 }
