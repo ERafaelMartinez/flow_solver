@@ -1,28 +1,38 @@
 #include "simulation.h"
+#include "output_writer/output_writer_paraview.h"
+#include "output_writer/output_writer_text.h"
 
 // Constructor. Initializes the simulation, creating the staggered grid
 // based on the simulation settings.
 Simulation::Simulation(Settings *settings)
     : settings_(settings), time_step_(0.0), simulation_time_(0.0) {
   // Initialize staggered-grid/grid-discretization based on settings
+  std::array<double, 2> cellSize = {
+      settings->physicalSize[0] / settings->nCells[0],
+      settings->physicalSize[1] / settings->nCells[1]};
+
   if (settings->useDonorCell) {
-    discretization_ =
-        new DonorCell(settings->nCells,
-                      {settings->physicalSize[0] / settings->nCells[0],
-                       settings->physicalSize[1] / settings->nCells[1]},
-                      settings->alpha);
+#ifndef NDEBUG
+    std::cout << "Using donor cells!" << std::endl;
+#endif
+    discretization_ = std::make_shared<DonorCell>(settings->nCells, cellSize,
+                                                  settings->alpha);
   } else {
-    // TODO: use shared_pointer
-    discretization_ = new CentralDifferences(
-        settings->nCells, {settings->physicalSize[0] / settings->nCells[0],
-                           settings->physicalSize[1] / settings->nCells[1]});
+#ifndef NDEBUG
+    std::cout << "Using central differences!" << std::endl;
+#endif
+    discretization_ =
+        std::make_shared<CentralDifferences>(settings->nCells, cellSize);
   }
 
   // Initialize pressure solver based on settings
   if (settings->pressureSolver == "GaussSeidel") {
-    pressure_solver_ =
-        new GaussSeidelPressureSolver(discretization_, &settings->epsilon,
-                                      &settings->maximumNumberOfIterations);
+#ifndef NDEBUG
+    std::cout << "Using gauss seider solver!" << std::endl;
+#endif
+    pressure_solver_ = std::make_shared<GaussSeidelPressureSolver>(
+        discretization_, settings->epsilon,
+        settings->maximumNumberOfIterations);
   } else if (settings->pressureSolver == "SOR") {
     throw std::invalid_argument("SOR solver not implemented yet");
   } else {
@@ -32,9 +42,8 @@ Simulation::Simulation(Settings *settings)
 
 // Destructor. Cleans up allocated resources.
 Simulation::~Simulation() {
-  delete grid_;
-  delete discretization_;
-  delete pressure_solver_;
+  // delete discretization_.get
+  // delete pressure_solver_;
 }
 
 // Method to apply/set boundary conditions for the velocity field

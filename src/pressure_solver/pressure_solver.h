@@ -2,6 +2,7 @@
 
 //In this file, we define the PressureSolver class interface
 #include "discretization/discretization.h"
+#include <memory>
 
 
 /* This class defines the interface for pressure solvers in the numerical simulation framework.
@@ -12,13 +13,13 @@ class PressureSolver{
 public:
     // Constructor
     PressureSolver(
-        Discretization* discretization,
-        double* convergence_tol_,
-        int* max_iterations_
+        std::shared_ptr<Discretization> discretization,
+        double convergence_tol,
+        int max_iterations
     ) : 
     discretization_(discretization),
-    convergence_tol_(convergence_tol_), 
-    max_iterations_(max_iterations_) {}
+    convergence_tol_(convergence_tol), 
+    max_iterations_(max_iterations) {}
 
    virtual ~PressureSolver() {}
 
@@ -47,8 +48,8 @@ public:
     bool solutionHasConverged();
 
 protected:
-    Discretization* discretization_;
-    double* res_;  // Residual measure for convergence check, has to be calculated/updated in calcPressureIter
-    double* convergence_tol_;
-    int* max_iterations_;
+    std::shared_ptr<Discretization> discretization_;
+    double res_;  // Residual measure for convergence check, has to be calculated/updated in calcPressureIter
+    double convergence_tol_;
+    int max_iterations_;
 };

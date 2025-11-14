@@ -8,10 +8,10 @@
 
 // Constructor
 GaussSeidelPressureSolver::GaussSeidelPressureSolver(
-    Discretization* discretization,
-    double* convergence_tol_,
-    int* max_iterations_
-) : PressureSolver(discretization, convergence_tol_, max_iterations_) {}
+    std::shared_ptr<Discretization> discretization,
+    double convergence_tol,
+    int max_iterations
+) : PressureSolver(discretization, convergence_tol, max_iterations) {}
 
 // Calculate pressure for one iteration
 void GaussSeidelPressureSolver::calcPressureIter() {
@@ -20,7 +20,7 @@ void GaussSeidelPressureSolver::calcPressureIter() {
     auto [Nx, Ny] = discretization_->gridSize();
     double coeff = dx*dx * dy*dy / (2 * (dx*dx + dy*dy));
 
-    *res_ = 0.0; // Reset residual for this iteration
+    res_ = 0.0; // Reset residual for this iteration
     for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); ++j)
         for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); ++i){
             discretization_->p().at(i, j) = coeff * (
@@ -35,7 +35,7 @@ void GaussSeidelPressureSolver::calcPressureIter() {
                 (discretization_->p().at(i, j+1) - 2*discretization_->p().at(i, j) + discretization_->p().at(i, j-1)) / (dy*dy)
             );
             double diff = discretization_->rhs().at(i, j) - laplacian;
-            *res_ += diff * diff / (Nx * Ny);
+            res_ += diff * diff / (Nx * Ny);
         }
 
 }

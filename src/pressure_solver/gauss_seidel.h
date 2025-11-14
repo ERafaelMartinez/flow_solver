@@ -13,9 +13,9 @@ class GaussSeidelPressureSolver : public PressureSolver {
 public:
     // Constructor
     GaussSeidelPressureSolver(
-        Discretization* discretization,
-        double* convergence_tol_,
-        int* max_iterations_
+        std::shared_ptr<Discretization> discretization,
+        double convergence_tol,
+        int max_iterations
     );
 
     // Override methods from PressureSolver

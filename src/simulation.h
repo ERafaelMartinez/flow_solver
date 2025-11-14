@@ -7,7 +7,10 @@
 #include "pressure_solver/pressure_solver.h"
 #include "pressure_solver/gauss_seidel.h"
 #include "pressure_solver/successive_overrelaxation.h"
+#include "output_writer/output_writer.h"
 #include "settings/settings.h"
+#include <memory>
+#include <vector>
 
 
 class Simulation {
@@ -52,9 +55,8 @@ public:
 
 private:
     Settings* settings_;
-    StaggeredGrid* grid_;
-    Discretization* discretization_;
-    PressureSolver* pressure_solver_;
+    std::shared_ptr<Discretization> discretization_;
+    std::shared_ptr<PressureSolver> pressure_solver_;
 
     double time_step_;
     double simulation_time_;
