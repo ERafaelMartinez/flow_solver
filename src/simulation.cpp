@@ -48,7 +48,7 @@ Simulation::Simulation(Settings *settings)
   #endif
 
   // BUG: Fix bug inside
-  // writers_.push_back(std::make_unique<OutputWriterParaview>(discretization_));
+  writers_.push_back(std::make_unique<OutputWriterParaview>(discretization_));
 }
 
 // Destructor. Cleans up allocated resources.
