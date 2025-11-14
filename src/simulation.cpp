@@ -38,6 +38,14 @@ Simulation::Simulation(Settings *settings)
   } else {
     throw std::invalid_argument("Unknown pressure solver type");
   }
+
+  // create writers
+#ifndef NDEBUG
+  writers_.push_back(std::make_unique<OutputWriterText>(discretization_));
+#endif
+
+  // BUG: Fix bug inside
+  // writers_.push_back(std::make_unique<OutputWriterParaview>(discretization_));
 }
 
 // Destructor. Cleans up allocated resources.
@@ -295,7 +303,9 @@ void Simulation::computeVelocities() {
 // Output the current state of the simulation
 // using the OutputWritter class
 void Simulation::outputSimulationState(int outputIndex) {
-  // Implementation of output writing goes here
+  for (int i = 0; i < writers_.size(); i++) {
+    writers_[i]->writeFile(outputIndex);
+  }
 }
 
 // run simulation timestep
