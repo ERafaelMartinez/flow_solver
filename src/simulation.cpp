@@ -35,7 +35,9 @@ Simulation::Simulation(Settings *settings)
         discretization_, settings->epsilon,
         settings->maximumNumberOfIterations);
   } else if (settings->pressureSolver == "SOR") {
-    throw std::invalid_argument("SOR solver not implemented yet");
+    pressure_solver_ = std::make_shared<SORPressureSolver>(
+        discretization_, settings->epsilon,
+        settings->maximumNumberOfIterations, settings->omega);
   } else {
     throw std::invalid_argument("Unknown pressure solver type");
   }
