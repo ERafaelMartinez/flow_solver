@@ -9,12 +9,12 @@ private:
   enum INDEX_TYPE { I_BEGIN, I_END, J_BEGIN, J_END };
 
   // {top, right, bottom, left}
-  std::array<int, 4> _uBoundaries = {1, 0, 1, 1};
-  std::array<int, 4> _vBoundaries = {0, 1, 1, 1};
+  std::array<int, 4> _uBoundaries = {1, 1, 1, 1};
+  std::array<int, 4> _vBoundaries = {1, 1, 1, 1};
   std::array<int, 4> _pBoundaries = {1, 1, 1, 1};
   std::array<int, 4> _rhsBoundaries = {1, 1, 1, 1};
-  std::array<int, 4> _fBoundaries = {1, 0, 1, 1};
-  std::array<int, 4> _gBoundaries = {0, 1, 1, 1};
+  std::array<int, 4> _fBoundaries = {1, 1, 1, 1};
+  std::array<int, 4> _gBoundaries = {1, 1, 1, 1};
 
   FieldVariable _u;
   FieldVariable _v;
