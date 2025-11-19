@@ -14,7 +14,7 @@ void OutputWriterParaview::writeFile(double currentTime)
 {
   // Assemble the filename
   std::stringstream fileName;
-  fileName << "out/output_" << std::setw(4) << setfill('0') << fileNo_ << "." << vtkWriter_->GetDefaultFileExtension();
+  fileName << "out/output_" << std::setw(4) << std::setfill('0') << fileNo_ << "." << vtkWriter_->GetDefaultFileExtension();
 
   // increment file no.
   fileNo_++;
@@ -32,7 +32,7 @@ void OutputWriterParaview::writeFile(double currentTime)
   const double dz = 1;
   dataSet->SetSpacing(dx, dy, dz);
 
-  // set number of points in each dimension, 1 cell in z direction
+  // set number of points in each dimension, 1 cell  direction
   std::array<int, 2> nCells = discretization_->gridSize();
   dataSet->SetDimensions(nCells[0] + 1, nCells[1] + 1, 1); // we want to have points at each corner of each cell
 
@@ -52,14 +52,19 @@ void OutputWriterParaview::writeFile(double currentTime)
   // we only consider the cells that are the actual computational domain, not the helper values in the "halo"
 
   int index = 0; // index for the vtk data structure, will be incremented in the inner loop
+  const FieldVariable pressure_field = discretization_->p();
   for (int j = 0; j < nCells[1] + 1; j++)
   {
-    for (int i = 0; i < nCells[0] + 1; i++, index++)
+    for (int i = 0; i < nCells[0] + 1; i++)
     {
+
+      //index = j * nCells[0] + i;
+      
       const double x = i * dx;
       const double y = j * dy;
 
-      arrayPressure->SetValue(index, discretization_->p().interpolateAt(x, y));
+      arrayPressure->SetValue(index, pressure_field.interpolateAt(x, y));
+      index++;
     }
   }
 
@@ -84,20 +89,25 @@ void OutputWriterParaview::writeFile(double currentTime)
 
   // loop over the mesh where p is defined and assign the values in the vtk data structure
   index = 0; // index for the vtk data structure
+  const FieldVariable u_field = discretization_->u();
+  const FieldVariable v_field = discretization_->v();
   for (int j = 0; j < nCells[1] + 1; j++)
   {
     const double y = j * dy;
 
-    for (int i = 0; i < nCells[0] + 1; i++, index++)
+    for (int i = 0; i < nCells[0] + 1; i++)
     {
+      //index = j * nCells[0] + i;
+
       const double x = i * dx;
 
       std::array<double, 3> velocityVector;
-      velocityVector[0] = discretization_->u().interpolateAt(x, y);
-      velocityVector[1] = discretization_->v().interpolateAt(x, y);
+      velocityVector[0] = u_field.interpolateAt(x, y);
+      velocityVector[1] = v_field.interpolateAt(x, y);
       velocityVector[2] = 0.0; // z-direction is 0
 
       arrayVelocity->SetTuple(index, velocityVector.data());
+      index++;
     }
   }
   // now, we should have added as many values as there are points in the vtk data structure

@@ -5,7 +5,7 @@ project(numsim)
 
 # Specify the name of the executable (${PROJECT_NAME} which is equal to what was set in the project() command).
 # Also specify the source files.
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp simulation.cpp)
 add_subdirectory(settings)
 add_subdirectory(output_writer)
 add_subdirectory(pressure_solver)

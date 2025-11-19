@@ -1,6 +1,7 @@
 #pragma once
 
 #include "field_variable.h"
+#include <stdexcept>
 
 
 class StaggeredGrid {
@@ -8,12 +9,12 @@ private:
   enum INDEX_TYPE { I_BEGIN, I_END, J_BEGIN, J_END };
 
   // {top, right, bottom, left}
-  std::array<int, 4> _uBoundaries = {1, 0, 1, 1};
-  std::array<int, 4> _vBoundaries = {0, 1, 1, 1};
+  std::array<int, 4> _uBoundaries = {1, 1, 1, 1};
+  std::array<int, 4> _vBoundaries = {1, 1, 1, 1};
   std::array<int, 4> _pBoundaries = {1, 1, 1, 1};
   std::array<int, 4> _rhsBoundaries = {1, 1, 1, 1};
-  std::array<int, 4> _fBoundaries = {1, 0, 1, 1};
-  std::array<int, 4> _gBoundaries = {0, 1, 1, 1};
+  std::array<int, 4> _fBoundaries = {1, 1, 1, 1};
+  std::array<int, 4> _gBoundaries = {1, 1, 1, 1};
 
   FieldVariable _u;
   FieldVariable _v;
@@ -27,8 +28,8 @@ private:
 
   std::array<int, 2> getVarGridSize(std::array<int, 2> gridSize,
                                     std::array<int, 4> boundaries) const {
-    return {gridSize[0] + _uBoundaries[1] + _uBoundaries[3],
-            gridSize[1] + _uBoundaries[0] + _uBoundaries[2]};
+    return {gridSize[0] + boundaries[1] + boundaries[3],
+            gridSize[1] + boundaries[0] + boundaries[2]};
   }
 
   int getInnerIndex(FieldVariable var, std::array<int, 4> boundaries,
@@ -38,14 +39,16 @@ private:
       return 0 + boundaries[3];
     }
     case I_END: {
-      return var.size()[0] - boundaries[1];
+      return var.size()[0] - boundaries[1] - 1;
     }
     case J_BEGIN: {
       return 0 + boundaries[2];
     }
     case J_END: {
-      return var.size()[1] - boundaries[0];
+      return var.size()[1] - boundaries[0] - 1;
     }
+    default:
+      throw std::invalid_argument("Invalid INDEX_TYPE value");
     }
   }
 
@@ -55,12 +58,23 @@ public:
   std::array<int, 2> gridSize() const { return _gridSize; }
   std::array<double, 2> cellSize() const { return _cellSize; }
 
-  FieldVariable u() const { return _u; }
-  FieldVariable v() const { return _v; }
-  FieldVariable p() const { return _p; }
-  FieldVariable rhs() const { return _rhs; }
-  FieldVariable g() const { return _g; }
-  FieldVariable f() const { return _f; }
+  FieldVariable& u() { return _u; }
+  const FieldVariable& u() const { return _u; }
+
+  FieldVariable& v() { return _v; }
+  const FieldVariable& v() const { return _v; }
+
+  FieldVariable& p() { return _p; }
+  const FieldVariable& p() const { return _p; }
+
+  FieldVariable& rhs() { return _rhs; }
+  const FieldVariable& rhs() const { return _rhs; }
+
+  FieldVariable& g() { return _g; }
+  const FieldVariable& g() const { return _g; }
+
+  FieldVariable& f() { return _f; }
+  const FieldVariable& f() const { return _f; }
 
   int uIBegin() const { return getInnerIndex(_u, _uBoundaries, I_BEGIN); }
   int uIEnd() const { return getInnerIndex(_u, _uBoundaries, I_END); }

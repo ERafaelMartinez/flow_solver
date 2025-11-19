@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <iostream>
 
-void writeParaviewOutput(int fileNo)
+void writeParaviewOutput(int fileNo, int Nx, int Ny, double dx, double dy, Array2D pressureField)
 {
   // create "out" subdirectory if it does not yet exist
   int returnValue = std::system("mkdir -p out");
@@ -33,13 +33,11 @@ void writeParaviewOutput(int fileNo)
   dataSet->SetOrigin(0, 0, 0);
 
   // set spacing of mesh
-  const double dx = 1;
-  const double dy = 1;
   const double dz = 1;
   dataSet->SetSpacing(dx, dy, dz);
 
   // set number of points in each dimension, 1 cell in z direction
-  dataSet->SetDimensions(10, 10, 1);
+  dataSet->SetDimensions(Nx, Ny, 1);
 
   // add pressure field variable
   // ---------------------------

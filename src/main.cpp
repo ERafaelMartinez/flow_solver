@@ -1,14 +1,12 @@
-#include "output_writer/write_paraview_output.h"
-
-#include <iostream>
-#include <cstdlib>
 #include "settings/settings.h"
+#include "simulation.h"
+#include <cstdlib>
+#include <iostream>
 
-int main(int argc, char *argv[])
-{
-  // if the number of given command line arguments is only 1 (= the program name), print out usage information and exit
-  if (argc == 1)
-  {
+int main(int argc, char *argv[]) {
+  // if the number of given command line arguments is only 1 (= the program
+  // name), print out usage information and exit
+  if (argc == 1) {
     std::cout << "usage: " << argv[0] << " <filename>" << std::endl;
 
     return EXIT_FAILURE;
@@ -30,6 +28,9 @@ int main(int argc, char *argv[])
 #ifndef NDEBUG
   std::cout << settings;
 #endif
+
+  Simulation simuation(&settings);
+  simuation.run();
 
   return EXIT_SUCCESS;
 }
