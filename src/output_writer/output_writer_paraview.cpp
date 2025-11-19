@@ -32,7 +32,7 @@ void OutputWriterParaview::writeFile(double currentTime)
   const double dz = 1;
   dataSet->SetSpacing(dx, dy, dz);
 
-  // set number of points in each dimension, 1 cell in z direction
+  // set number of points in each dimension, 1 cell  direction
   std::array<int, 2> nCells = discretization_->gridSize();
   dataSet->SetDimensions(nCells[0] + 1, nCells[1] + 1, 1); // we want to have points at each corner of each cell
 
@@ -55,12 +55,16 @@ void OutputWriterParaview::writeFile(double currentTime)
   const FieldVariable pressure_field = discretization_->p();
   for (int j = 0; j < nCells[1] + 1; j++)
   {
-    for (int i = 0; i < nCells[0] + 1; i++, index++)
+    for (int i = 0; i < nCells[0] + 1; i++)
     {
+
+      //index = j * nCells[0] + i;
+      
       const double x = i * dx;
       const double y = j * dy;
 
       arrayPressure->SetValue(index, pressure_field.interpolateAt(x, y));
+      index++;
     }
   }
 
@@ -91,8 +95,10 @@ void OutputWriterParaview::writeFile(double currentTime)
   {
     const double y = j * dy;
 
-    for (int i = 0; i < nCells[0] + 1; i++, index++)
+    for (int i = 0; i < nCells[0] + 1; i++)
     {
+      //index = j * nCells[0] + i;
+
       const double x = i * dx;
 
       std::array<double, 3> velocityVector;
@@ -101,6 +107,7 @@ void OutputWriterParaview::writeFile(double currentTime)
       velocityVector[2] = 0.0; // z-direction is 0
 
       arrayVelocity->SetTuple(index, velocityVector.data());
+      index++;
     }
   }
   // now, we should have added as many values as there are points in the vtk data structure

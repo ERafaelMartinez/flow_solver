@@ -61,14 +61,10 @@ Simulation::~Simulation() {
 void Simulation::setBoundaryConditionsVelocity() {
   // Apply inhomogeneous Dirichlet boundary conditions
   // to the velocity u, and v fields based on settings
-  // and apply them for F and G based on the Neumann BC for the
-  // pressure posisson equation.
 
-  // get reference to u, v, F, and G field variables
+  // get reference to u, v field variables
   FieldVariable& u = discretization_->u();
   FieldVariable& v = discretization_->v();
-  FieldVariable& f = discretization_->f();
-  FieldVariable& g = discretization_->g();
 
   // Apply top and bottom boundary conditions
   std::array<double, 2> dirichletBcBottom = settings_->dirichletBcBottom;
@@ -96,18 +92,7 @@ void Simulation::setBoundaryConditionsVelocity() {
     // it explicitly on the final valid point and propagate it to
     // the ghost cell as well.
     v.at(i, discretization_->vJEnd()) = dirichletBcTop[1];
-    // v.at(i, discretization_->vJEnd() + 1) = dirichletBcTop[1];
-  }
-
-  for (int i = discretization_->gIBegin(); i <= discretization_->gIEnd(); ++i) {
-    // G's boundary condition is derived/chosen from the Neumann BC for p:
-    // g(i, 0) = v(i, 0) = dirichletBcBottom[1]
-    g.at(i, discretization_->gJBegin() - 1) = dirichletBcBottom[1];
-
-    // G's boundary condition is derived/chosen from the Neumann BC for p:
-    // g(i, jmax) = v(i, jmax) = dirichletBcTop[1]
-    g.at(i, discretization_->gJEnd()) = dirichletBcTop[1];
-    //g.at(i, discretization_->gJEnd() + 1) = dirichletBcTop[1];
+    v.at(i, discretization_->vJEnd() + 1) = dirichletBcTop[1];
   }
 
   // Apply left and right boundary conditions
@@ -131,10 +116,10 @@ void Simulation::setBoundaryConditionsVelocity() {
     // the end point of the domain is directly at the boundary
     // so we set it directly and propagate to the ghost cell
     u.at(discretization_->uIEnd(), j) = dirichletBcRight[0];
-    // u.at(discretization_->uIEnd() + 1, j) = dirichletBcRight[0];
+    u.at(discretization_->uIEnd() + 1, j) = dirichletBcRight[0];
   }
 
-  for (int j = discretization_->vJBegin() - 1; j <= discretization_->vJEnd();
+  for (int j = discretization_->vJBegin() - 1; j <= discretization_->vJEnd() + 1;
        ++j) {
     // For v, the first domain point is not at the boundary, so we set the
     // value at the ghost cell such that the average yields the desired
@@ -148,19 +133,51 @@ void Simulation::setBoundaryConditionsVelocity() {
     v.at(discretization_->vIEnd() + 1, j) =
         (2 * dirichletBcRight[1] - v.at(discretization_->vIEnd(), j));
   }
+}
 
-  for (int j = discretization_->fJBegin() - 1;
-       j <= discretization_->fJEnd() + 1; ++j) {
 
-    // F's boundary condition is derived/chosen from the Neumann BC for p:
-    // f(0, j) = u(0, j) = dirichletBcLeft[0]
-    f.at(discretization_->fIBegin() - 1, j) = dirichletBcLeft[0];
+// Method to apply/set boundary conditions for F, and G
+void Simulation::setBoundaryConditionsFG() {
+  // Override Boundary values to F and G based to guarantee 
+  // Neumann BC for the pressure posisson equation.
 
-    // F's boundary condition is derived/chosen from the Neumann BC for p:
-    // f(imax, j) = u(imax, j) = dirichletBcRight[0];
-    f.at(discretization_->fIEnd(), j) = dirichletBcRight[0];
-    // f.at(discretization_->fIEnd() + 1, j) = dirichletBcRight[0];
+  // get reference to f, g field variables
+  FieldVariable& f = discretization_->f();
+  FieldVariable& g = discretization_->g();
+
+  // Apply top and bottom boundary conditions
+  std::array<double, 2> dirichletBcBottom = settings_->dirichletBcBottom;
+  std::array<double, 2> dirichletBcTop = settings_->dirichletBcTop;
+  for (int i = discretization_->gIBegin(); i <= discretization_->gIEnd(); ++i) {
+    // G's boundary condition is derived/chosen from the Neumann BC for p:
+    // g(i, 0) = v(i, 0) = dirichletBcBottom[1]
+    g.at(i, discretization_->gJBegin() - 1) = discretization_->v().at(i, discretization_->vJBegin() - 1);
+
+    // G's boundary condition is derived/chosen from the Neumann BC for p:
+    // g(i, jmax) = v(i, jmax) = dirichletBcTop[1]
+    g.at(i, discretization_->gJEnd()) = discretization_->v().at(i, discretization_->vJEnd());
+    g.at(i, discretization_->gJEnd() + 1) = discretization_->v().at(i, discretization_->vJEnd() + 1);
   }
+
+  // Apply left and right boundary conditions
+  std::array<double, 2> dirichletBcLeft = settings_->dirichletBcLeft;
+  std::array<double, 2> dirichletBcRight = settings_->dirichletBcRight;
+
+  // We start and end in the indices of the ghost cells to include the
+  // left-right boundary conditions to the corners of the extended/ghost domain
+  // as well
+  for (int j = discretization_->fJBegin() - 1;
+        j <= discretization_->fJEnd() + 1; ++j) {
+
+      // F's boundary condition is derived/chosen from the Neumann BC for p:
+      // f(0, j) = u(0, j) = dirichletBcLeft[0]
+      f.at(discretization_->fIBegin() - 1, j) = discretization_->u().at(discretization_->uIBegin() - 1, j);
+
+      // F's boundary condition is derived/chosen from the Neumann BC for p:
+      // f(imax, j) = u(imax, j) = dirichletBcRight[0];
+      f.at(discretization_->fIEnd(), j) = discretization_->u().at(discretization_->uIEnd(), j);
+      f.at(discretization_->fIEnd() + 1, j) = discretization_->u().at(discretization_->uIEnd() + 1, j);
+    }
 }
 
 // Method to apply/set boundary conditions for the pressure field
@@ -252,7 +269,7 @@ void Simulation::computeRHS() {
   for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); ++i) {
     for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd();
          ++j) {
-      rhs.at(i, j) = 1. / dt *
+      rhs.at(i, j) = (1. / dt) *
                      ((F.at(i, j) - F.at(i - 1, j)) / dx +
                       (G.at(i, j) - G.at(i, j - 1)) / dy);
     }
@@ -353,54 +370,65 @@ void Simulation::outputSimulationState(int outputIndex) {
 
 // run simulation timestep
 void Simulation::runTimestep(int stepNumber) {
-  // 1. Apply boundary conditions for velocity, pressure,
-  //    and intermediate velocity fields
   #ifndef NDEBUG
     std::cout << "Simulation step " << stepNumber << ":" << std::endl;
   #endif
 
+  // 1. Apply boundary conditions for the velocity field
   #ifndef NDEBUG
     std::cout << "\tSetting boundaries..." << std::endl;
   #endif
   setBoundaryConditionsVelocity();
-  setBoundaryConditionsPressure();
 
-  // 2. Compute next time step size
+  // 2. Compute next time step size based on the values of
+  // the current velocity field and the stability criteria
   #ifndef NDEBUG
     std::cout << "\tComputing timestep..." << std::endl;
   #endif
   time_step_ = computeNextTimeStepSize();
   simulation_time_ += time_step_;
 
+  // 4. Enforce boundary conditions for F and G
+  #ifndef NDEBUG
+    std::cout << "\tSetting boundaries for F and G..." << std::endl;
+  #endif
+  setBoundaryConditionsFG();
+
   // 3. Compute intermediate velocities F, G
   #ifndef NDEBUG
-    std::cout << "\tComputing intermediate velocities..." << std::endl;
+    std::cout << "\tComputing intermediate velocity field" << std::endl;
   #endif
   computeIntermediateVelocities();
 
-  // 4. Compute RHS for pressure poisson equation
+  // 5. Compute RHS for pressure poisson equation
   #ifndef NDEBUG
     std::cout << "\tComputing rhs..." << std::endl;
   #endif
   computeRHS();
 
-  // 5. Solve pressure equation
+  // 7. Enforce boundary conditions for pressure
+  #ifndef NDEBUG
+    std::cout << "\tSetting boundaries for pressure..." << std::endl;
+  #endif
+  setBoundaryConditionsPressure();
+
+  // 6. Solve pressure equation
   #ifndef NDEBUG
     std::cout << "\tSolving pressure equation..." << std::endl;
   #endif
   solvePressureEquation();
 
-  // 6. Compute velocities based on new pressure field
+  // 8. Compute velocities based on new pressure field
   #ifndef NDEBUG
     std::cout << "\tComputing velocities..." << std::endl;
   #endif
   computeVelocities();
 
-  // 7. Output current state of the simulation
+  // 9. Output current state of the simulation
   #ifndef NDEBUG
     std::cout << "\tWriting simulation..." << std::endl;
   #endif
-  outputSimulationState(stepNumber);
+  outputSimulationState(simulation_time_);
 }
 
 // run the full simulation

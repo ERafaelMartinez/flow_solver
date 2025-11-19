@@ -39,6 +39,9 @@ public:
     // Method to compute the intermediate velocities F, G
     void computeIntermediateVelocities();
 
+    // Method to apply/set boundary conditions for F and G
+    void setBoundaryConditionsFG();
+
     // Solve the pressure equation
     void solvePressureEquation();
 
@@ -57,7 +60,7 @@ private:
     Settings* settings_;
     std::shared_ptr<Discretization> discretization_;
     std::shared_ptr<PressureSolver> pressure_solver_;
-    std::vector<std::unique_ptr<OutputWriter>> writers_;
+    std::vector< std::unique_ptr<OutputWriter> > writers_;
 
     double time_step_;
     double simulation_time_;

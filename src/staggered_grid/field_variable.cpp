@@ -17,24 +17,25 @@ double FieldVariable::interpolateAt(double physicalXPos,
   // x and y are being given in phyisical space, so we need to first
   // convert to the corresponding position on our grid
   // TODO: How do we use the positionInCell here?
-  auto position_on_grid_x = physicalXPos / _cellSize[0];
-  auto position_on_grid_y = physicalYPos / _cellSize[1];
+  auto position_on_grid_x = (physicalXPos / _cellSize[0]) + _offset[0];
+  auto position_on_grid_y = (physicalYPos / _cellSize[1]) + _offset[1];
 
   // get the cell index by simply casting to int
   std::size_t cell_i = position_on_grid_x;
   std::size_t cell_j = position_on_grid_y;
 
-  if (cell_i == _size[0] - 1) {
+  // clamp to valid range
+  if (cell_i >= _size[0] - 1) {
     cell_i--;
   }
 
-  if (cell_j == _size[1] - 1) {
+  if (cell_j >= _size[1] - 1) {
     cell_j--;
   }
 
   // get the relative position 'inside' the cell
-  auto dx = position_on_grid_x - cell_i + _offset[0];
-  auto dy = position_on_grid_y - cell_j + _offset[1];
+  auto dx = position_on_grid_x - cell_i;
+  auto dy = position_on_grid_y - cell_j;
 
   // interpolate the values from edges of the cell
   // to get the 'exact' value at the 'continuous' point

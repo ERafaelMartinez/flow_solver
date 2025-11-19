@@ -38,5 +38,5 @@ void PressureSolver::solvePressureEquation() {
 bool PressureSolver::solutionHasConverged() {
   // Assuming the res_ measure has been updated during the
   // last iteration
-  return (res_ < convergence_tol_ * (convergence_tol_));
+  return (res_ <= convergence_tol_ * convergence_tol_);
 }

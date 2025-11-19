@@ -23,8 +23,6 @@ void SORPressureSolver::calcPressureIter() {
     auto [Nx, Ny] = discretization_->gridSize();
     
     double coeff = dx*dx * dy*dy / (2 * (dx*dx + dy*dy));
-    res_ = 0.0;
-
     for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); ++j)
         for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); ++i) {
 
@@ -40,13 +38,20 @@ void SORPressureSolver::calcPressureIter() {
             double p_relaxed = (1.0 - omega_) * p_old + omega_ * p_GS;
 
             discretization_->p().at(i, j) = p_relaxed;
+        }
 
-            // Residual computation
-            double laplacian =
-                (discretization_->p().at(i+1, j) - 2*p_relaxed + discretization_->p().at(i-1, j)) / (dx*dx) +
-                (discretization_->p().at(i, j+1) - 2*p_relaxed + discretization_->p().at(i, j-1)) / (dy*dy);
-
+    // After updating all pressures, compute the residual for convergence check
+    res_ = 0.; // Reset residual for this iteration
+    FieldVariable& p = discretization_->p();
+    for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); ++j)
+        for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); ++i){
+            // Add the squared difference to the residual times normalization factor
+            double laplacian = (
+                (p.at(i+1, j) - 2*p.at(i, j) + p.at(i-1, j)) / (dx*dx) +
+                (p.at(i, j+1) - 2*p.at(i, j) + p.at(i, j-1)) / (dy*dy)
+            );
             double diff = discretization_->rhs().at(i, j) - laplacian;
             res_ += diff * diff / (Nx * Ny);
         }
+    
 }
