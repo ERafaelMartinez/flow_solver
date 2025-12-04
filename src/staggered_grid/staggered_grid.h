@@ -1,8 +1,8 @@
 #pragma once
 
-#include "field_variable.h"
+#include "../storage/field_variable.h"
+#include <array>
 #include <stdexcept>
-
 
 class StaggeredGrid {
 private:
@@ -58,23 +58,36 @@ public:
   std::array<int, 2> gridSize() const { return _gridSize; }
   std::array<double, 2> cellSize() const { return _cellSize; }
 
-  FieldVariable& u() { return _u; }
-  const FieldVariable& u() const { return _u; }
+  // Alias for cellSize, used by Discretization callers expecting meshWidth
+  const std::array<double, 2> &meshWidth() const { return _cellSize; }
+  // Further aliases for cellSize, used by Discretization callers expecting meshWidth
+  const double &dx() const { return _cellSize[0]; }
+  const double &dy() const { return _cellSize[1]; }
 
-  FieldVariable& v() { return _v; }
-  const FieldVariable& v() const { return _v; }
+  // Alias for gridSize, used by Discretization callers expecting nCells
+  const std::array<int, 2> &nCells() const { return _gridSize; }
+  
+  // Further aliases for gridSize, used by Discretization callers expecting nCells
+  const int &nCellsX() const { return _gridSize[0]; }
+  const int &nCellsY() const { return _gridSize[1]; }
 
-  FieldVariable& p() { return _p; }
-  const FieldVariable& p() const { return _p; }
+  FieldVariable &u() { return _u; }
+  const FieldVariable &u() const { return _u; }
 
-  FieldVariable& rhs() { return _rhs; }
-  const FieldVariable& rhs() const { return _rhs; }
+  FieldVariable &v() { return _v; }
+  const FieldVariable &v() const { return _v; }
 
-  FieldVariable& g() { return _g; }
-  const FieldVariable& g() const { return _g; }
+  FieldVariable &p() { return _p; }
+  const FieldVariable &p() const { return _p; }
 
-  FieldVariable& f() { return _f; }
-  const FieldVariable& f() const { return _f; }
+  FieldVariable &rhs() { return _rhs; }
+  const FieldVariable &rhs() const { return _rhs; }
+
+  FieldVariable &g() { return _g; }
+  const FieldVariable &g() const { return _g; }
+
+  FieldVariable &f() { return _f; }
+  const FieldVariable &f() const { return _f; }
 
   int uIBegin() const { return getInnerIndex(_u, _uBoundaries, I_BEGIN); }
   int uIEnd() const { return getInnerIndex(_u, _uBoundaries, I_END); }

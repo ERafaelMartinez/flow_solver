@@ -15,6 +15,8 @@ public:
 
     double maxMagnitude();
 
+    void setToZero();
+
 private:
     const std::array<double, 2> _cellSize;
     const std::array<double, 2> _offset;

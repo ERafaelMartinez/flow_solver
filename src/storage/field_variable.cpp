@@ -46,6 +46,11 @@ double FieldVariable::interpolateAt(double physicalXPos,
   return vertical;
 }
 
+void FieldVariable::setToZero() {
+  for (int i = 0; i < size()[0]*size()[1]; ++i) {
+    data()[i] = 0.0;
+  }
+}
 
 double FieldVariable::maxMagnitude() {
   double max_val = 0.0;
