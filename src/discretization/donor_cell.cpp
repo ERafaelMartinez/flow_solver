@@ -1,6 +1,7 @@
 #include "donor_cell.h"
 
 #include <cassert>
+#include <cmath>
 
 DonorCell::DonorCell(std::array<int, 2> nCells, std::array<double, 2> meshWidth,
                      double alpha)
@@ -19,7 +20,7 @@ double DonorCell::computeDu2Dx(int i, int j) const {
 
   const double central = (uRight * uRight) - (uLeft * uLeft);
   const double correction =
-      ((abs(uRight) * uDiffRight) - (abs(uLeft) * uDiffLeft));
+      ((fabs(uRight) * uDiffRight) - (fabs(uLeft) * uDiffLeft));
 
   return (1. / dx) * (central +  alpha_ * correction);
 }
@@ -35,7 +36,7 @@ double DonorCell::computeDv2Dy(int i, int j) const {
 
   const double central = (vTop * vTop) - (vBottom * vBottom);
   const double correction =
-      ((abs(vTop) * vDiffTop) - (abs(vBottom) * vDiffBottom));
+      ((fabs(vTop) * vDiffTop) - (fabs(vBottom) * vDiffBottom));
 
   return (1. / dy) * (central +  alpha_ * correction);
 }
@@ -54,7 +55,7 @@ double DonorCell::computeDuvDx(int i, int j) const {
 
   const double central = (uTopRight * vRight) - (uTopLeft * vLeft);
   const double correction =
-      (abs(uTopRight) * vDiffRight) - (abs(uTopLeft) * vDiffLeft);
+      (fabs(uTopRight) * vDiffRight) - (fabs(uTopLeft) * vDiffLeft);
 
   return (1. / dx) * (central +  alpha_ * correction);
 }
@@ -74,7 +75,7 @@ double DonorCell::computeDuvDy(int i, int j) const {
 
   const double central = (vTopRight * uTopRight) - (vBottomRight * uBottomRight);
   const double correction =
-      (abs(vTopRight) * uDiffTop) - (abs(vBottomRight) * uDiffBottom);
+      (fabs(vTopRight) * uDiffTop) - (fabs(vBottomRight) * uDiffBottom);
 
   return (1. / dy) * (central +  alpha_ * correction);
 }

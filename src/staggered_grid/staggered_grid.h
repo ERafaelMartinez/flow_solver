@@ -16,15 +16,15 @@ private:
   std::array<int, 4> _fBoundaries = {1, 1, 1, 1};
   std::array<int, 4> _gBoundaries = {1, 1, 1, 1};
 
+  std::array<int, 2> _gridSize;
+  std::array<double, 2> _cellSize;
+
   FieldVariable _u;
   FieldVariable _v;
   FieldVariable _p;
   FieldVariable _rhs;
   FieldVariable _g;
   FieldVariable _f;
-
-  std::array<int, 2> _gridSize;
-  std::array<double, 2> _cellSize;
 
   std::array<int, 2> getVarGridSize(std::array<int, 2> gridSize,
                                     std::array<int, 4> boundaries) const {

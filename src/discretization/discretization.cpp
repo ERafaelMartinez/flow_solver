@@ -25,7 +25,7 @@ double Discretization::computeD2vDx2(int i, int j) const
 double Discretization::computeD2vDy2(int i, int j) const
 {
     const double dy = cellSize()[1];
-    return (1./(dy*dy)) * (v().at(i,j+1) - 2.0*v().at(i,j) + v().at(i,j-1));
+    return (1./(dy*dy)) * (v().at(i,j+1) - 2.*v().at(i,j) + v().at(i,j-1));
 }
 
  // compute 1st derivative ∂p/∂x

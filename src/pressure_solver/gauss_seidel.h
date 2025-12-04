@@ -26,23 +26,6 @@ public:
      * using the Gauss-Seidel method.
      */
     void calcPressureIter() override;
-
-    /**
-     * @brief Solve the pressure equation using Gauss-Seidel.
-     * 
-     * This method iteratively solves the pressure equation using the Gauss-Seidel method
-     * until the solution converges or the maximum number of iterations is reached.
-     */
-    void solvePressureEquation();
-
-    /**
-     * @brief Check if the solution has converged in Gauss-Seidel.
-     * 
-     * This method evaluates whether the solution meets the convergence criteria
-     * specific to the Gauss-Seidel method.
-     * @return True if the solution has converged, false otherwise.
-     */
-    bool solutionHasConverged();
 private:
     // Private members specific to Gauss-Seidel implementation
 };

@@ -39,6 +39,8 @@ public:
      */
     void solvePressureEquation();
 
+    void calcRes();
+
     /**
      * @brief Check if the solution has converged.
      * 
@@ -46,6 +48,14 @@ public:
      * @return True if the solution has converged, false otherwise.
      */
     bool solutionHasConverged();
+
+    /**
+     * @brief Set the boundary conditions for the pressure field.
+     * 
+     * This method applies the appropriate homogeneous Neumann boundary conditions
+     * to the pressure field in the discretization.
+     */
+    void setBoundaryConditions();
 
 protected:
     std::shared_ptr<Discretization> discretization_;

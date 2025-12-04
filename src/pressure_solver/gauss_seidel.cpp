@@ -16,22 +16,30 @@ GaussSeidelPressureSolver::GaussSeidelPressureSolver(
 // Calculate pressure for one iteration
 void GaussSeidelPressureSolver::calcPressureIter() {
     // Parameters required for the calculation
-    auto [dx, dy] = discretization_->cellSize();
-    auto [Nx, Ny] = discretization_->gridSize();
+    auto cellSize = discretization_->cellSize();
+    double dx = cellSize[0];
+    double dy = cellSize[1];
+    auto gridSize = discretization_->gridSize();
+    int Nx = gridSize[0];
+    int Ny = gridSize[1];
     double coeff = dx*dx * dy*dy / (2 * (dx*dx + dy*dy));
 
     // Get references to pressure and rhs fields
     FieldVariable& p = discretization_->p();
     FieldVariable& rhs = discretization_->rhs();
 
-    for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); ++j)
-        for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); ++i){
+    for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); ++i){
+        for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); ++j){
             p.at(i, j) = coeff * (
+                // p(i-1,j) (new) + p(i+1,j) (old)
                 (p.at(i-1, j) + p.at(i+1, j)) / (dx*dx) +
+                // p(i,j-1) (new) + p(i,j+1) (old)
                 (p.at(i, j-1) + p.at(i, j+1)) / (dy*dy) -
+                // rhs(i,j) (new; with velocities of previous timestep)
                 rhs.at(i, j) 
             );
         }
+    }
 
     // Compute residual
     res_ = 0.; // Reset residual for this iteration

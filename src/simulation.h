@@ -24,9 +24,6 @@ public:
     // Method to apply/set boundary conditions for velocity field
     void setBoundaryConditionsVelocity();
 
-    // Method to apply/set boundary conditions for pressure field
-    void setBoundaryConditionsPressure();
-
     // Compute timestep based on the stability criteria
     // derived from the grid size, reynolds number,
     // and maximum velocities
@@ -50,9 +47,9 @@ public:
 
     // Output the current state of the simulation
     // using the OutputWritter class
-    void outputSimulationState(int outputIndex);
+    void outputSimulationState(double outputIndex);
 
-    void runTimestep(int stepNumber);
+    void runTimestep();
 
     void run();
 

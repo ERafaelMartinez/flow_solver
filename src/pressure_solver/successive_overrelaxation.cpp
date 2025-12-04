@@ -18,40 +18,30 @@ SORPressureSolver::SORPressureSolver(
 
 // Calculate pressure for one iteration
 void SORPressureSolver::calcPressureIter() {
-    // Parameters required for the calculation
-    auto [dx, dy] = discretization_->cellSize();
-    auto [Nx, Ny] = discretization_->gridSize();
+    auto cellSize = discretization_->cellSize();
+    const double dx = cellSize[0];
+    const double dy = cellSize[1];
+    const double idx2 = 1.0 / (dx * dx);
+    const double idy2 = 1.0 / (dy * dy);
     
-    double coeff = dx*dx * dy*dy / (2 * (dx*dx + dy*dy));
-    for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); ++j)
-        for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); ++i) {
-
-            // Gauss-Seidel new pressure (unrelaxed)
-            double p_GS = coeff * (
-                (discretization_->p().at(i-1, j) + discretization_->p().at(i+1, j)) / (dx*dx) +
-                (discretization_->p().at(i, j-1) + discretization_->p().at(i, j+1)) / (dy*dy) -
-                discretization_->rhs().at(i, j)
-            );
-
-            // Apply SOR relaxation
-            double p_old = discretization_->p().at(i, j);
-            double p_relaxed = (1.0 - omega_) * p_old + omega_ * p_GS;
-
-            discretization_->p().at(i, j) = p_relaxed;
-        }
-
-    // After updating all pressures, compute the residual for convergence check
-    res_ = 0.; // Reset residual for this iteration
+    // Precompute coefficient
+    const double coeff = 1.0 / (2.0 * (idx2 + idy2));
+    
     FieldVariable& p = discretization_->p();
-    for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); ++j)
-        for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); ++i){
-            // Add the squared difference to the residual times normalization factor
-            double laplacian = (
-                (p.at(i+1, j) - 2*p.at(i, j) + p.at(i-1, j)) / (dx*dx) +
-                (p.at(i, j+1) - 2*p.at(i, j) + p.at(i, j-1)) / (dy*dy)
-            );
-            double diff = discretization_->rhs().at(i, j) - laplacian;
-            res_ += diff * diff / (Nx * Ny);
-        }
+    const FieldVariable& rhs = discretization_->rhs();
     
+    for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); j++) {
+        for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); i++) {
+            // Compute the Gauss-Seidel target value
+            const double p_GS = coeff * (
+                (p.at(i-1, j) + p.at(i+1, j)) * idx2 +
+                (p.at(i, j-1) + p.at(i, j+1)) * idy2 -
+                rhs.at(i, j)
+            );
+
+            const double p_old = p.at(i, j);
+            const double p_new = (1.0 - omega_) * p_old + omega_ * p_GS;
+            p.at(i, j) = p_new;
+        }
+    }
 }
