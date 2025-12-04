@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglew-dev \
     openjdk-11-jdk \
+    mpich \
     && rm -rf /var/lib/apt/lists/*
 
 # Ensure libjawt.so is correctly linked
