@@ -53,4 +53,13 @@ public:
   //! (i_local,j_local) + nodeOffset = (i_global,j_global)
   //! used in OutputWriterParaviewParallel
   std::array<int,2> nodeOffset() const;
+
+protected: 
+  std::array<int,2> nCellsGlobal_;
+  std::array<int,2> nCellsLocal_;
+  std::array<int,2> nodeOffset_;
+  int ownRankNo_;
+  int nRanks_;
+
+  std::array<Partitioning* , 4> neighbours_;
 };
