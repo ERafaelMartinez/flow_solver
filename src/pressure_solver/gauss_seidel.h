@@ -1,6 +1,6 @@
 #pragma once
 
-#include "discretization/discretization.h"
+#include "../discretization/discretization.h"
 #include "pressure_solver.h"
 
 /* This file declares the GaussSeidelPressureSolver class, which is a specific 

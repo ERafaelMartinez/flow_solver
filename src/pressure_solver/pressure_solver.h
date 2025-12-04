@@ -1,7 +1,7 @@
 #pragma once
 
 //In this file, we define the PressureSolver class interface
-#include "discretization/discretization.h"
+#include "../discretization/discretization.h"
 #include <memory>
 
 

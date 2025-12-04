@@ -1,6 +1,6 @@
 #pragma once
 
-#include "discretization/discretization.h"
+#include "../discretization/discretization.h"
 #include "pressure_solver.h"
 #include <iostream>
 /* This file declares the SORPressureSolver class, which is a specific implementation of the 
