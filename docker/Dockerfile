@@ -48,8 +48,14 @@ ENV VTK_DIR=/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1
 # Create a working directory for your project
 WORKDIR /workspace
 
-# Create a build directory (files will be mounted via volume)
-RUN mkdir -p build
+# remove the build folder if it already exists
+# we do this to make sure that the file later gets created by the simulation user
+# so that it has the correct permissions
+RUN rm -rf build
+
+# Create a new user for building and running the simulation
+RUN useradd -ms /bin/bash simulation
+USER simulation
 
 # Default command
 CMD ["/bin/bash"]
