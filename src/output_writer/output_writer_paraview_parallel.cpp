@@ -21,19 +21,19 @@ OutputWriterParaviewParallel::OutputWriterParaviewParallel(
       // create field variables for resulting values, only for local data as
       // send buffer
       u_(nPointsGlobal_, std::array<double, 2>{0., 0.},
-         discretization_->meshWidth()),
+         discretization_->cellSize()),
       v_(nPointsGlobal_, std::array<double, 2>{0., 0.},
-         discretization_->meshWidth()),
+         discretization_->cellSize()),
       p_(nPointsGlobal_, std::array<double, 2>{0., 0.},
-         discretization_->meshWidth()),
+         discretization_->cellSize()),
 
       // create field variables for resulting values, after MPI communication
       uGlobal_(nPointsGlobal_, std::array<double, 2>{0., 0.},
-               discretization_->meshWidth()),
+               discretization_->cellSize()),
       vGlobal_(nPointsGlobal_, std::array<double, 2>{0., 0.},
-               discretization_->meshWidth()),
+               discretization_->cellSize()),
       pGlobal_(nPointsGlobal_, std::array<double, 2>{0., 0.},
-               discretization_->meshWidth())
+               discretization_->cellSize())
 
 {
   // Create a vtkWriter_
@@ -45,8 +45,8 @@ void OutputWriterParaviewParallel::gatherData() {
   // meshWidth
 
   int nPointsGlobalTotal = nPointsGlobal_[0] * nPointsGlobal_[1];
-  const double dx = discretization_->meshWidth()[0];
-  const double dy = discretization_->meshWidth()[1];
+  const double dx = discretization_->cellSize()[0];
+  const double dy = discretization_->cellSize()[1];
 
   // set values in own subdomain, other values are left at zero
 
@@ -85,9 +85,9 @@ void OutputWriterParaviewParallel::gatherData() {
   }
 
   // sum up values from all ranks, not set values are zero
-  MPI_Reduce(u_.data(), uGlobal_.data(), nPointsGlobalTotal, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(v_.data(), vGlobal_.data(), nPointsGlobalTotal, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(p_.data(), pGlobal_.data(), nPointsGlobalTotal, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(u_.data().data(), uGlobal_.data().data(), nPointsGlobalTotal, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(v_.data().data(), vGlobal_.data().data(), nPointsGlobalTotal, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(p_.data().data(), pGlobal_.data().data(), nPointsGlobalTotal, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
 }
 
@@ -116,8 +116,8 @@ void OutputWriterParaviewParallel::writeFile(double currentTime) {
   dataSet->SetOrigin(0, 0, 0);
 
   // set spacing of mesh
-  const double dx = discretization_->meshWidth()[0];
-  const double dy = discretization_->meshWidth()[1];
+  const double dx = discretization_->cellSize()[0];
+  const double dy = discretization_->cellSize()[1];
   const double dz = 1;
   dataSet->SetSpacing(dx, dy, dz);
 
@@ -147,7 +147,7 @@ void OutputWriterParaviewParallel::writeFile(double currentTime) {
                  // inner loop
   for (int j = 0; j < nCellsGlobal_[1] + 1; j++) {
     for (int i = 0; i < nCellsGlobal_[0] + 1; i++, index++) {
-      arrayPressure->SetValue(index, pGlobal_(i, j));
+      arrayPressure->SetValue(index, pGlobal_.at(i, j));
     }
   }
 
@@ -182,8 +182,8 @@ void OutputWriterParaviewParallel::writeFile(double currentTime) {
       const double x = i * dx;
 
       std::array<double, 3> velocityVector;
-      velocityVector[0] = uGlobal_(i, j);
-      velocityVector[1] = vGlobal_(i, j);
+      velocityVector[0] = uGlobal_.at(i, j);
+      velocityVector[1] = vGlobal_.at(i, j);
       velocityVector[2] = 0.0; // z-direction is 0
 
       arrayVelocity->SetTuple(index, velocityVector.data());

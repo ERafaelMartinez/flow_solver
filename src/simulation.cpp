@@ -49,11 +49,13 @@ Simulation::Simulation(Settings *settings)
 
   // create writers
   #ifndef DISABLE_OUTPUT_WRITERS
+  // TODO: replace partitioning with a real one, this one is used to make the compiler happy
+  Partitioning p;
     #ifndef NDEBUG
-      writers_.push_back(std::make_unique<OutputWriterText>(discretization_));
+      writers_.push_back(std::make_unique<OutputWriterText>(discretization_, p));
     #endif
     // BUG: Fix bug inside
-    writers_.push_back(std::make_unique<OutputWriterParaview>(discretization_));
+    writers_.push_back(std::make_unique<OutputWriterParaview>(discretization_, p));
   #endif
 }
 
