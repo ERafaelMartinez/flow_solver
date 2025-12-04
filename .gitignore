@@ -53,3 +53,11 @@ CMakeUserPresets.json
 
 # ignore output folder
 /out
+
+# ignore submissions and output
+/submissions
+/_out
+
+# ignore macos files
+.DS_Store
+
