@@ -8,42 +8,45 @@ void Partitioning::initialize(std::array<int, 2> nCellsGlobal) {
   // 2. How many neighbours we have
 
   // rank determines which section of the grid we are looking at
-  int processes_count = this->nRanks();
-  int own_rank = this->ownRankNo();
+  int processesCount = this->nRanks();
+  int ownRank = this->ownRankNo();
 
   nCellsGlobal_ = nCellsGlobal;
 
-  // TODO: Find a better way that would work with other numbers (real squars,
-  // close to squares, prime)
-  int nTilesX = std::sqrt(processes_count);
-  int nTilesY = std::ceil(processes_count / nTilesX);
+  // determine the number of partitions/subdomains in x and y direction
+  int nSubdomainsX = std::sqrt(processesCount);
+  int nSubdomainsY = std::ceil(processesCount / nSubdomainsX);
+  // TODO: Find a better way that would work with other numbers 
+  // (real squares, close to squares, prime)
 
   // determine the position (indices) of the partition
-  int subdomain_col = own_rank / nTilesX;
-  int subdomain_row = own_rank % nTilesX;
+  int subdomainColIndex = ownRank / nSubdomainsX;
+  int subdomainRowIndex = ownRank % nSubdomainsX;
 
-  // TODO: we still have to deal with edge cases where the size of the subdomain
-  // is not square.
-  nCellsLocal_[0] = computeSubdomainSizeInAxis(nCellsGlobal[0], nTilesX);
-  nCellsLocal_[1] = computeSubdomainSizeInAxis(nCellsGlobal[1], nTilesY);
+  nCellsLocal_[0] = computeSubdomainSizeInAxis(
+    nCellsGlobal[0], nSubdomainsX, subdomainColIndex
+  );
+  nCellsLocal_[1] = computeSubdomainSizeInAxis(
+    nCellsGlobal[1], nSubdomainsY, subdomainRowIndex
+  );
 
   // Determine the offsets
   // TODO: Check if the assignment (col vs row) is correct and how other classes
   // expect to use this
   nodeOffset_[0] =
-      computeSubdomainAxisOffset(nCellsGlobal_[0], nTilesX, subdomain_col);
+      computeSubdomainAxisOffset(nCellsGlobal_[0], nSubdomainsX, subdomainColIndex);
   nodeOffset_[1] =
-      computeSubdomainAxisOffset(nCellsGlobal_[1], nTilesY, subdomain_row);
+      computeSubdomainAxisOffset(nCellsGlobal_[1], nSubdomainsY, subdomainRowIndex);
 
   // determine the neighbour partitions
   neighbourLeft_ =
-      getProcessAt(subdomain_col - 1, subdomain_row, nTilesX, nTilesY);
+      getProcessAt(subdomainColIndex - 1, subdomainRowIndex, nSubdomainsX, nSubdomainsY);
   neighbourRight_ =
-      getProcessAt(subdomain_col + 1, subdomain_row, nTilesX, nTilesY);
+      getProcessAt(subdomainColIndex + 1, subdomainRowIndex, nSubdomainsX, nSubdomainsY);
   neighbourBottom_ =
-      getProcessAt(subdomain_col, subdomain_row - 1, nTilesX, nTilesY);
+      getProcessAt(subdomainColIndex, subdomainRowIndex - 1, nSubdomainsX, nSubdomainsY);
   neighbourTop_ =
-      getProcessAt(subdomain_col, subdomain_row + 1, nTilesX, nTilesY);
+      getProcessAt(subdomainColIndex, subdomainRowIndex + 1, nSubdomainsX, nSubdomainsY);
 }
 
 int Partitioning::getProcessAt(int i, int j, int numOfColumns,
@@ -55,40 +58,36 @@ int Partitioning::getProcessAt(int i, int j, int numOfColumns,
   return i * numOfColumns + j;
 }
 
-int Partitioning::computeSubdomainSizeInAxis(int globalSizeInAxis,
-                                             int axisPartitionCount) const {
-  int processesCount = this->nRanks();
-  int ownRank = this->ownRankNo();
+int Partitioning::computeSubdomainSizeInAxis(int globalCellCountInAxis,
+                                             int axisPartitionCount,
+                                             int partitionIndexInAxis) const {
+  int baseSize = globalCellCountInAxis / axisPartitionCount;
+  int remainder = globalCellCountInAxis % axisPartitionCount;
 
-  int sizePerSubdomain = globalSizeInAxis / axisPartitionCount;
-
-  int sizeInAxis = globalSizeInAxis;
-  // If we can divide the domain into multiple subdomains, then figure out the
-  // correct local size
-  if (sizePerSubdomain > 1) {
-    if (ownRank < processesCount - 1) {
-      sizeInAxis = sizePerSubdomain;
-    } else {
-      // For the last subdomain, we take the remaining of the global domain that
-      // was not assigned to any previous subdomain
-      sizeInAxis = globalSizeInAxis - (processesCount - 1) * sizePerSubdomain;
-    }
+  int sizeInAxis = baseSize;
+  if (partitionIndexInAxis == axisPartitionCount - 1) {
+    // The last partition gets the base size plus any remainder
+    sizeInAxis += remainder;
   }
-
   return sizeInAxis;
 }
 
-int Partitioning::computeSubdomainAxisOffset(int globalSizeInAxis,
+
+int Partitioning::computeSubdomainAxisOffset(int globalCellCountInAxis,
                                              int axisPartitionCount,
                                              int partitionIndexInAxis) const {
+  /*
+   * calculate the offset of the partition in the axis based on the partition
+   * index in the axis and the subdomain size distribution (made by the
+   * computeSubdomainSizeInAxis method). This allocates the base size for each
+   * partition and then adds the remainder to the last partition, thus for each
+   * subdomain we get an integer multiple of the base size as offset.
 
-  // this is enough for now, since we currently now that only the right most and
-  // top most partitions could differ in size than most. HACK: This though can
-  // change depending on the method we use to compute how we want to partition
-  // the domain
-  int squareSizeForLeftAndBottomMostPartitions =
-      globalSizeInAxis / axisPartitionCount;
-  return partitionIndexInAxis * squareSizeForLeftAndBottomMostPartitions;
+   * NOTE: If computeSubdomainSizeInAxis changes, this method has to be updated
+   * as well.
+   */
+  int baseSize = globalCellCountInAxis / axisPartitionCount;
+  return partitionIndexInAxis * baseSize;
 }
 
 //! get the local number of cells in the own subdomain

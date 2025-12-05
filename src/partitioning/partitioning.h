@@ -61,16 +61,18 @@ protected:
 
   std::array<Partitioning *, 4> neighbours_;
 
+  int neighbourLeft_;
+  int neighbourTop_;
+  int neighbourRight_;
+  int neighbourBottom_;
+
 private:
-  int neighbourLeft_ = -1;
-  int neighbourTop_ = -1;
-  int neighbourRight_ = -1;
-  int neighbourBottom_ = -1;
+int getProcessAt(int i, int j, int numOfColumns, int numOfRows) const;
+  int computeSubdomainSizeInAxis(int globalCellCountInAxis,
+                                 int axisPartitionCount,
+                                 int partitionIndexInAxis) const;
 
-  int getProcessAt(int i, int j, int numOfColumns, int numOfRows) const;
-  int computeSubdomainSizeInAxis(int globalSizeInAxis,
-                                 int axisPartitionCount) const;
-
-  int computeSubdomainAxisOffset(int globalSizeInAxis, int axisPartitionCount,
+  int computeSubdomainAxisOffset(int globalCellCountInAxis,
+                                 int axisPartitionCount,
                                  int partitionIndexInAxis) const;
 };
