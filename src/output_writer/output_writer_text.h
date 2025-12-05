@@ -10,7 +10,7 @@ class OutputWriterText : public OutputWriter {
 public:
   //! constructor
   OutputWriterText(std::shared_ptr<Discretization> discretization,
-                   const Partitioning &partitioning)
+                   std::shared_ptr<Partitioning> partitioning)
       : OutputWriter(discretization, partitioning) {}
 
   //! write current velocities to file, filename is output_<count>.txt

@@ -1,8 +1,9 @@
 #include "simulation.h"
 #include "discretization/discretization.h"
+#include <cassert>
 #ifndef DISABLE_OUTPUT_WRITERS
-#include "output_writer/output_writer_paraview.h"
-#include "output_writer/output_writer_text.h"
+#include "output_writer/output_writer_paraview_parallel.h"
+#include "output_writer/output_writer_text_parallel.h"
 #endif
 #include <algorithm>
 
@@ -16,7 +17,7 @@ Simulation::Simulation(Settings *settings)
       settings->physicalSize[1] / settings->nCells[1]};
 
   // Initialize domain partitioning
-  partitioning_ = std::make_shared<Partitioning>();
+  partitioning_->initialize(settings->nCells);
 
   // Initialize discretizations based on partitioning
   initDiscretization_(partitioning_->nCellsLocal(), cellSize);
@@ -26,12 +27,6 @@ Simulation::Simulation(Settings *settings)
 
   // Initialize output writers
   initOutputWriters_();
-}
-
-// Create partitioning based on settings
-void Simulation::initPartitioning_() {
-  // TODO: determine arguments for partitioning
-  partitioning_ = std::make_shared<Partitioning>();
 }
 
 // Create discretization based on settings
@@ -52,8 +47,8 @@ void Simulation::initDiscretization_(
   // validate size of field variables:
   // each variable hast two ghost cells on each direction
   int nCellsExpected = (nCells[0] + 2) * (nCells[1] + 2);
-  assert(discretization_->u().size() == nCellsExpected);
-  assert(discretization_->v().size() == nCellsExpected);
+  assert(discretization_->u().size()[0] * discretization_->u().size()[1] == nCellsExpected);
+  assert(discretization_->v().size()[0] * discretization_->v().size()[1] == nCellsExpected);
 }
 
 // Create pressure solver based on settings

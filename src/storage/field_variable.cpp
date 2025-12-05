@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 
 // from https://stackoverflow.com/a/4353537
 // TODO: Put into its own utility
