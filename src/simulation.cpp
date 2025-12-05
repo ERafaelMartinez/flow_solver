@@ -81,15 +81,15 @@ void Simulation::initPressureSolver_() {
 void Simulation::initOutputWriters_() {
   // create writers
   #ifndef DISABLE_OUTPUT_WRITERS
-    // TODO: replace partitioning with a real one, this one is used to make the
-    // compiler happy
-    Partitioning p;
   #ifndef NDEBUG
-    writers_.push_back(std::make_unique<OutputWriterText>(discretization_, p));
+    writers_.push_back(
+      std::make_unique<OutputWriterTextParallel>(discretization_, partitioning_)
+    );
   #endif
     // BUG: Fix bug inside
     writers_.push_back(
-        std::make_unique<OutputWriterParaview>(discretization_, p));
+      std::make_unique<OutputWriterParaviewParallel>(discretization_, partitioning_)
+    );
   #endif
 }
 
@@ -257,9 +257,9 @@ double Simulation::computeNextTimeStepSize() {
   double u_max = discretization_->u().maxMagnitude();
   double v_max = discretization_->v().maxMagnitude();
 
-#ifndef NDEBUG
-  std::cout << "\t u_max, v_max = " << u_max << ", " << v_max << std::endl;
-#endif
+  #ifndef NDEBUG
+    std::cout << "\t u_max, v_max = " << u_max << ", " << v_max << std::endl;
+  #endif
 
   double conv_dt_u = dx / std::abs(u_max);
   double conv_dt_v = dy / std::abs(v_max);
@@ -268,11 +268,12 @@ double Simulation::computeNextTimeStepSize() {
   // take the smallest physics-induced dt and scale with safety factor
   double dt = std::min(diff_dt, conv_dt) * settings_->tau;
 
-// limit the maximum timestep size using the settings
-#ifndef NDEBUG
-  std::cout << "\t Computed dt: " << std::min(dt, settings_->maximumDt)
-            << std::endl;
-#endif
+  // limit the maximum timestep size using the settings
+  #ifndef NDEBUG
+    std::cout << "\t Computed dt: " << std::min(dt, settings_->maximumDt)
+              << std::endl;
+  #endif
+
   return std::min(dt, settings_->maximumDt);
 }
 
@@ -312,9 +313,10 @@ void Simulation::computeIntermediateVelocities() {
   FieldVariable &F = discretization_->f();
   FieldVariable &G = discretization_->g();
 
-#ifndef NDEBUG
-  std::cout << "\t\t Computing F..." << std::endl;
-#endif
+  #ifndef NDEBUG
+    std::cout << "\t\t Computing F..." << std::endl;
+  #endif
+
   for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
     for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd();
          ++j) {
@@ -329,9 +331,9 @@ void Simulation::computeIntermediateVelocities() {
     }
   }
 
-#ifndef NDEBUG
-  std::cout << "\t\t Computing G..." << std::endl;
-#endif
+  #ifndef NDEBUG
+    std::cout << "\t\t Computing G..." << std::endl;
+  #endif
   for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
     for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd();
          ++j) {
@@ -390,54 +392,54 @@ void Simulation::outputSimulationState(double outputIndex) {
 
 // run simulation timestep
 void Simulation::runTimestep() {
-// 0. Apply/set boundary conditions for velocity field
-#ifndef NDEBUG
-  std::cout << "\tSetting velocity boundaries..." << std::endl;
-#endif
+  // 0. Apply/set boundary conditions for velocity field
+  #ifndef NDEBUG
+    std::cout << "\tSetting velocity boundaries..." << std::endl;
+  #endif
   setBoundaryConditionsVelocity();
 
-// 1. Compute next time step size based on the values of
-// the current velocity field and the stability criteria
-#ifndef NDEBUG
-  std::cout << "\tComputing timestep..." << std::endl;
-#endif
+  // 1. Compute next time step size based on the values of
+  // the current velocity field and the stability criteria
+  #ifndef NDEBUG
+    std::cout << "\tComputing timestep..." << std::endl;
+  #endif
   time_step_ = computeNextTimeStepSize();
   simulation_time_ += time_step_;
 
-// 3. Compute intermediate velocities F, G
-#ifndef NDEBUG
-  std::cout << "\tComputing intermediate velocity field" << std::endl;
-#endif
+  // 3. Compute intermediate velocities F, G
+  #ifndef NDEBUG
+    std::cout << "\tComputing intermediate velocity field" << std::endl;
+  #endif
   computeIntermediateVelocities();
 
   // 2. Enforce boundary conditions for F and G
-#ifndef NDEBUG
-  std::cout << "\tSetting boundaries for F and G..." << std::endl;
-#endif
+  #ifndef NDEBUG
+    std::cout << "\tSetting boundaries for F and G..." << std::endl;
+  #endif
   setBoundaryConditionsFG();
 
-// 4. Compute RHS for pressure poisson equation
-#ifndef NDEBUG
-  std::cout << "\tComputing rhs..." << std::endl;
-#endif
+  // 4. Compute RHS for pressure poisson equation
+  #ifndef NDEBUG
+    std::cout << "\tComputing rhs..." << std::endl;
+  #endif
   computeRHS();
 
-// 5. Solve pressure equation
-#ifndef NDEBUG
-  std::cout << "\tSolving pressure equation..." << std::endl;
-#endif
+  // 5. Solve pressure equation
+  #ifndef NDEBUG
+    std::cout << "\tSolving pressure equation..." << std::endl;
+  #endif
   solvePressureEquation();
 
-// 6. Compute velocities based on new pressure field
-#ifndef NDEBUG
-  std::cout << "\tComputing velocities..." << std::endl;
-#endif
+  // 6. Compute velocities based on new pressure field
+  #ifndef NDEBUG
+    std::cout << "\tComputing velocities..." << std::endl;
+  #endif
   computeVelocities();
 
-// 7. Output current state of the simulation
-#ifndef NDEBUG
-  std::cout << "\tWriting simulation at " << simulation_time_ << std::endl;
-#endif
+  // 7. Output current state of the simulation
+  #ifndef NDEBUG
+    std::cout << "\tWriting simulation at " << simulation_time_ << std::endl;
+  #endif
   outputSimulationState(simulation_time_);
 }
 
@@ -445,11 +447,11 @@ void Simulation::runTimestep() {
 void Simulation::run() {
   int stepNumber = 0;
   while (simulation_time_ < settings_->endTime) {
-#ifndef NDEBUG
-    std::cout << "Simulation step " << stepNumber << ":" << std::endl;
-    std::cout << "\t Current simulation time: " << simulation_time_
-              << std::endl;
-#endif
+    #ifndef NDEBUG
+      std::cout << "Simulation step " << stepNumber << ":" << std::endl;
+      std::cout << "\t Current simulation time: " << simulation_time_
+                << std::endl;
+    #endif
     runTimestep();
     stepNumber++;
   }
