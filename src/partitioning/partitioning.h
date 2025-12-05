@@ -2,19 +2,17 @@
 
 #include <array>
 
-class Partitioning
-{
+class Partitioning {
 public:
-
   //! compute partitioning, set internal variables
-  void initialize(std::array<int,2> nCellsGlobal);
+  void initialize(std::array<int, 2> nCellsGlobal);
 
   //! get the local number of cells in the own subdomain
-  std::array<int,2> nCellsLocal() const;
+  std::array<int, 2> nCellsLocal() const;
 
   //! get the global number of cells in the whole computational domain
   //! used in OutputWriterParaviewParallel
-  std::array<int,2> nCellsGlobal() const;
+  std::array<int, 2> nCellsGlobal() const;
 
   //! get the own MPI rank no
   //! used in OutputWriterParaviewParallel and OutputWriterTextParallel
@@ -49,15 +47,30 @@ public:
   //! get the rank no of the bottom neighbouring rank
   int bottomNeighbourRankNo() const;
 
-  //! get the offset values for counting local nodes in x and y direction. 
+  //! get the offset values for counting local nodes in x and y direction.
   //! (i_local,j_local) + nodeOffset = (i_global,j_global)
   //! used in OutputWriterParaviewParallel
-  std::array<int,2> nodeOffset() const;
+  std::array<int, 2> nodeOffset() const;
 
-protected: 
-  std::array<int,2> nCellsGlobal_;
-  std::array<int,2> nCellsLocal_;
-  std::array<int,2> nodeOffset_;
+protected:
+  std::array<int, 2> nCellsGlobal_;
+  std::array<int, 2> nCellsLocal_;
+  std::array<int, 2> nodeOffset_;
   int ownRankNo_;
   int nRanks_;
+
+  std::array<Partitioning *, 4> neighbours_;
+
+private:
+  int neighbourLeft_ = -1;
+  int neighbourTop_ = -1;
+  int neighbourRight_ = -1;
+  int neighbourBottom_ = -1;
+
+  int getProcessAt(int i, int j, int numOfColumns, int numOfRows) const;
+  int computeSubdomainSizeInAxis(int globalSizeInAxis,
+                                 int axisPartitionCount) const;
+
+  int computeSubdomainAxisOffset(int globalSizeInAxis, int axisPartitionCount,
+                                 int partitionIndexInAxis) const;
 };
