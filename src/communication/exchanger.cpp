@@ -37,20 +37,38 @@ DataExchanger::getDataBuffers_(FieldVariable &fieldVar) {
 void DataExchanger::packDataBuffers_(
     std::array<std::shared_ptr<DataBuffer>, 4> &dataBuffers,
     FieldVariable &fieldVar) {
+  // internal bounds are the ones being sent to neighbors
+  // assuming all staggered grids have ghost cells on all
+  // boundaries, the following hard coded indices are
+  // correct (look into staggered grid: boundaries as {1, 1, 1, 1})
+  std::array<int, 2> rowRange = {0, fieldVar.size()[1]};
+  std::array<int, 2> columnRange = {0, fieldVar.size()[0]};
   for (int i = 0; i < 4; ++i) {
     if (neighborsRank_[i] != -1) {
       switch (i) {
       case 0:
-        dataBuffers[i]->update(fieldVar.getLeftBoundary());
+        dataBuffers[i]->update(
+          // left internal-boundary column index is 1
+          fieldVar.getColumnValues(1, rowRange)
+        );
         break;
       case 1:
-        dataBuffers[i]->update(fieldVar.getRightBoundary());
+        dataBuffers[i]->update(
+          // right internal-boundary column index is size[0] - 2
+          fieldVar.getColumnValues(fieldVar.size()[0] - 2, rowRange)
+        );
         break;
       case 2:
-        dataBuffers[i]->update(fieldVar.getTopBoundary());
+        dataBuffers[i]->update(
+          // top internal-boundary row index is size[1] - 2
+          fieldVar.getRowValues(fieldVar.size()[1] - 2, columnRange)
+        );
         break;
       case 3:
-        dataBuffers[i]->update(fieldVar.getBottomBoundary());
+        dataBuffers[i]->update(
+          // bottom internal-boundary row index is 1
+          fieldVar.getRowValues(1, columnRange)
+        );
         break;
       }
     }
@@ -61,20 +79,38 @@ void DataExchanger::packDataBuffers_(
 void DataExchanger::unpackDataBuffers_(
     std::array<std::shared_ptr<DataBuffer>, 4> &dataBuffers,
     FieldVariable &fieldVar) {
+  // ghost cell boundaries are the ones being received from neighbors
+  // assuming all staggered grids have ghost cells on all
+  // boundaries, the following hard coded indices are
+  // correct
+  std::array<int, 2> rowRange = {0, fieldVar.size()[1]};
+  std::array<int, 2> columnRange = {0, fieldVar.size()[0]};
   for (int i = 0; i < 4; ++i) {
     if (neighborsRank_[i] != -1) {
       switch (i) {
       case 0:
-        fieldVar.setLeftBoundary(dataBuffers[i]->asArray());
+        fieldVar.setColumnValues(
+          // left ghost-column index is 0
+          0, rowRange, dataBuffers[i]->asArray()
+        );
         break;
       case 1:
-        fieldVar.setRightBoundary(dataBuffers[i]->asArray());
+        fieldVar.setColumnValues(
+          // right ghost-column index is size[0] - 1
+          fieldVar.size()[0] - 1, rowRange, dataBuffers[i]->asArray()
+        );
         break;
       case 2:
-        fieldVar.setTopBoundary(dataBuffers[i]->asArray());
+        fieldVar.setRowValues(
+          // top ghost-row index is size[1] - 1
+          fieldVar.size()[1] - 1, columnRange, dataBuffers[i]->asArray()
+        );
         break;
       case 3:
-        fieldVar.setBottomBoundary(dataBuffers[i]->asArray());
+        fieldVar.setRowValues(
+          // bottom ghost-row index is 0
+          0, columnRange, dataBuffers[i]->asArray()
+        );
         break;
       }
     }

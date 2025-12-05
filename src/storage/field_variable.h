@@ -15,17 +15,13 @@ public:
 
   void setToZero();
 
-  // Boundary accessors for MPI communication
-  std::vector<double> getLeftBoundary() const;
-  std::vector<double> getRightBoundary() const;
-  std::vector<double> getTopBoundary() const;
-  std::vector<double> getBottomBoundary() const;
+  // row/column getters for MPI communication
+  std::vector<double> getColumnValues(int columnIndex, std::array<int, 2> rowRange) const;
+  std::vector<double> getRowValues(int rowIndex, std::array<int, 2> columnRange) const;
 
-  // Boundary setters for MPI communication
-  void setLeftBoundary(const std::vector<double> &data);
-  void setRightBoundary(const std::vector<double> &data);
-  void setTopBoundary(const std::vector<double> &data);
-  void setBottomBoundary(const std::vector<double> &data);
+  // bulk row/column setters for MPI communication
+  void setColumnValues(int columnIndex, std::array<int, 2> rowRange, const std::vector<double> &columnValues);
+  void setRowValues(int rowIndex, std::array<int, 2> columnRange, const std::vector<double> &rowValues);
 
 private:
   const std::array<double, 2> _cellSize;

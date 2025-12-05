@@ -64,68 +64,45 @@ double FieldVariable::maxMagnitude() {
   return max_val;
 }
 
-// Boundary getters - extract boundary data for MPI communication
-std::vector<double> FieldVariable::getLeftBoundary() const {
-  std::vector<double> leftCells;
-  leftCells.reserve(_size[1]);
-  for (int j = 0; j < _size[1]; ++j) {
-    leftCells.push_back(at(0, j));
+// row/column getters - extract boundary data for MPI communication
+std::vector<double> FieldVariable::getColumnValues(int columnIndex, std::array<int, 2> rowRange) const {
+  std::vector<double> columnValues;
+  columnValues.reserve(_size[1]);
+  for (int j = rowRange[0]; j < rowRange[1]; ++j) {
+    columnValues.push_back(at(columnIndex, j));
   }
-  return leftCells;
+  return columnValues;
 }
 
-std::vector<double> FieldVariable::getRightBoundary() const {
-  std::vector<double> rightCells;
-  rightCells.reserve(_size[1]);
-  for (int j = 0; j < _size[1]; ++j) {
-    rightCells.push_back(at(_size[0] - 1, j));
+std::vector<double> FieldVariable::getRowValues(int rowIndex, std::array<int, 2> columnRange) const {
+  std::vector<double> rowValues;
+  rowValues.reserve(_size[0]);
+  for (int i = columnRange[0]; i < columnRange[1]; ++i) {
+    rowValues.push_back(at(i, rowIndex));
   }
-  return rightCells;
-}
-
-std::vector<double> FieldVariable::getTopBoundary() const {
-  std::vector<double> topCells;
-  topCells.reserve(_size[0]);
-  for (int i = 0; i < _size[0]; ++i) {
-    topCells.push_back(at(i, _size[1] - 1));
-  }
-  return topCells;
-}
-
-std::vector<double> FieldVariable::getBottomBoundary() const {
-  std::vector<double> bottomCells;
-  bottomCells.reserve(_size[0]);
-  for (int i = 0; i < _size[0]; ++i) {
-    bottomCells.push_back(at(i, 0));
-  }
-  return bottomCells;
+  return rowValues;
 }
 
 // Boundary setters - update boundary data after MPI communication
-void FieldVariable::setLeftBoundary(const std::vector<double> &data) {
-  assert(data.size() == _size[1]);
-  for (int j = 0; j < _size[1]; ++j) {
-    at(0, j) = data[j];
+void FieldVariable::setColumnValues(int columnIndex, std::array<int, 2> rowRange, const std::vector<double> &columnValues) {
+  // assert that the number of values matches the number of rows
+  assert(columnValues.size() == rowRange[1] - rowRange[0]);
+  // assert that the row range is valid
+  assert(rowRange[0] >= 0 && rowRange[1] <= _size[1]);
+
+  for (int j = rowRange[0]; j < rowRange[1]; ++j) {
+    at(columnIndex, j) = columnValues[j];
   }
 }
 
-void FieldVariable::setRightBoundary(const std::vector<double> &data) {
-  assert(data.size() == _size[1]);
-  for (int j = 0; j < _size[1]; ++j) {
-    at(_size[0] - 1, j) = data[j];
+void FieldVariable::setRowValues(int rowIndex, std::array<int, 2> columnRange, const std::vector<double> &rowValues) {
+  // assert that the number of values matches the number of columns
+  assert(rowValues.size() == columnRange[1] - columnRange[0]);
+  // assert that the column range is valid
+  assert(columnRange[0] >= 0 && columnRange[1] <= _size[0]);
+
+  for (int i = columnRange[0]; i < columnRange[1]; ++i) {
+    at(i, rowIndex) = rowValues[i];
   }
 }
 
-void FieldVariable::setTopBoundary(const std::vector<double> &data) {
-  assert(data.size() == _size[0]);
-  for (int i = 0; i < _size[0]; ++i) {
-    at(i, _size[1] - 1) = data[i];
-  }
-}
-
-void FieldVariable::setBottomBoundary(const std::vector<double> &data) {
-  assert(data.size() == _size[0]);
-  for (int i = 0; i < _size[0]; ++i) {
-    at(i, 0) = data[i];
-  }
-}
