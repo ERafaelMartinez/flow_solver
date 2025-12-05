@@ -1,4 +1,4 @@
-#include "../communication/exchanger.h"
+#include "exchanger.h"
 #include "../partitioning/partitioning.h"
 #include "../staggered_grid/staggered_grid.h"
 #include "../storage/field_variable.h"
@@ -96,7 +96,7 @@ void DataExchanger::sendDataBuffers_(
       // send data to neighbor process
       MPI_Isend(dataBuffers[i]->asArray().data(),
                 dataBuffers[i]->asArray().size(), MPI_DOUBLE, neighborsRank_[i],
-                0, MPI_COMM_WORLD, sendRequests[i]);
+                0, MPI_COMM_WORLD, &sendRequests[i]);
       // add request to request pool in exchanger
       sendRequests_.push_back(sendRequests[i]);
     }
@@ -118,7 +118,7 @@ void DataExchanger::receiveDataBuffers_(
       // receive data from neighbor process
       MPI_Irecv(dataBuffers[i]->asArray().data(),
                 dataBuffers[i]->asArray().size(), MPI_DOUBLE, neighborsRank_[i],
-                0, MPI_COMM_WORLD, receiveRequests[i]);
+                0, MPI_COMM_WORLD, &receiveRequests[i]);
       // add request to request pool in exchanger
       receiveRequests_.push_back(receiveRequests[i]);
     }
@@ -126,31 +126,28 @@ void DataExchanger::receiveDataBuffers_(
 }
 
 void DataExchanger::exchange(FieldVariable &fieldVar) {
-    // clear request pools
-    sendRequests_.clear();
-    receiveRequests_.clear();
+  // clear request pools
+  sendRequests_.clear();
+  receiveRequests_.clear();
 
-    // get new data buffers
-    std::array<std::shared_ptr<DataBuffer>, 4> sendBuffers =
-    getDataBuffers_(fieldVar);
-    std::array<std::shared_ptr<DataBuffer>, 4> receiveBuffers =
-    getDataBuffers_(fieldVar);
+  // get new data buffers
+  std::array<std::shared_ptr<DataBuffer>, 4> sendBuffers =
+      getDataBuffers_(fieldVar);
+  std::array<std::shared_ptr<DataBuffer>, 4> receiveBuffers =
+      getDataBuffers_(fieldVar);
 
-    // pack data from the field variables into the buffers
-    packDataBuffers_(sendBuffers, fieldVar);
-    // send data to neighbors
-    sendDataBuffers_(sendBuffers);
-    // wait for all sends to finish
-    MPI_Waitall(
-        sendRequests_.size(), sendRequests_.data(), MPI_STATUSES_IGNORE
-    );
+  // pack data from the field variables into the buffers
+  packDataBuffers_(sendBuffers, fieldVar);
+  // send data to neighbors
+  sendDataBuffers_(sendBuffers);
+  // wait for all sends to finish
+  MPI_Waitall(sendRequests_.size(), sendRequests_.data(), MPI_STATUSES_IGNORE);
 
-    // receive data from neighbors
-    receiveDataBuffers_(receiveBuffers);
-    // wait for all receives to finish
-    MPI_Waitall(
-        receiveRequests_.size(), receiveRequests_.data(), MPI_STATUSES_IGNORE
-    );
-    // unpack data from the buffers into the field variables
-    unpackDataBuffers_(receiveBuffers, fieldVar);
+  // receive data from neighbors
+  receiveDataBuffers_(receiveBuffers);
+  // wait for all receives to finish
+  MPI_Waitall(receiveRequests_.size(), receiveRequests_.data(),
+              MPI_STATUSES_IGNORE);
+  // unpack data from the buffers into the field variables
+  unpackDataBuffers_(receiveBuffers, fieldVar);
 }

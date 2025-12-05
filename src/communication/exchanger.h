@@ -26,7 +26,7 @@ public:
 
   // Updator data buffer with new data
   void update(const std::vector<double> &newData) {
-    //assert(newData.size() == nRegs_);
+    // assert(newData.size() == nRegs_);
     data_ = newData;
   }
 
@@ -39,9 +39,6 @@ class DataExchanger {
 public:
   // constructor
   DataExchanger(std::shared_ptr<Partitioning> partitioning);
-
-  // destructor
-  virtual ~DataExchanger();
 
   // exchange variables via MPI with neighbors
   virtual void exchange(FieldVariable &fieldVar) = 0;
@@ -57,19 +54,25 @@ private:
 
   // provide new data buffers, one for each ghost boundary based on the
   // field variable's size
-  std::array<std::shared_ptr<DataBuffer>, 4> getDataBuffers_(FieldVariable &fieldVar);
+  std::array<std::shared_ptr<DataBuffer>, 4>
+  getDataBuffers_(FieldVariable &fieldVar);
 
   // pack data from the field variables into the buffers
-  void packDataBuffers_(std::array<std::shared_ptr<DataBuffer>, 4> &dataBuffers, FieldVariable &fieldVar);
+  void packDataBuffers_(std::array<std::shared_ptr<DataBuffer>, 4> &dataBuffers,
+                        FieldVariable &fieldVar);
 
   // unpack data from the buffers into the field variables
-  void unpackDataBuffers_(std::array<std::shared_ptr<DataBuffer>, 4> &dataBuffers, FieldVariable &fieldVar);
+  void
+  unpackDataBuffers_(std::array<std::shared_ptr<DataBuffer>, 4> &dataBuffers,
+                     FieldVariable &fieldVar);
 
   // receive data from neighbors and update buffer state
-  void receiveDataBuffers_(std::array<std::shared_ptr<DataBuffer>, 4> &dataBuffers);
+  void
+  receiveDataBuffers_(std::array<std::shared_ptr<DataBuffer>, 4> &dataBuffers);
 
   // send data to neighbors from current buffer state
-  void sendDataBuffers_(std::array<std::shared_ptr<DataBuffer>, 4> &dataBuffers);
+  void
+  sendDataBuffers_(std::array<std::shared_ptr<DataBuffer>, 4> &dataBuffers);
 
   // declare MPI send/receive requests for non-blocking
   // communication
