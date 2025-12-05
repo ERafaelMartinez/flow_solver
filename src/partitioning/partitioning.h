@@ -60,6 +60,4 @@ protected:
   std::array<int,2> nodeOffset_;
   int ownRankNo_;
   int nRanks_;
-
-  std::array<Partitioning* , 4> neighbours_;
 };
