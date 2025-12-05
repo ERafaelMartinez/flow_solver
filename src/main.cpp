@@ -2,6 +2,7 @@
 #include "simulation.h"
 #include <cstdlib>
 #include <iostream>
+#include <mpi.h>
 
 int main(int argc, char *argv[]) {
   // if the number of given command line arguments is only 1 (= the program
@@ -11,6 +12,8 @@ int main(int argc, char *argv[]) {
 
     return EXIT_FAILURE;
   }
+
+  MPI_Init(&argc, &argv);
 
   // read in the first argument
   std::string filename = argv[1];
@@ -32,5 +35,6 @@ int main(int argc, char *argv[]) {
   Simulation simuation(&settings);
   simuation.run();
 
+  MPI_Finalize();
   return EXIT_SUCCESS;
 }
