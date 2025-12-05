@@ -1,6 +1,7 @@
 #include "simulation.h"
 #include "discretization/discretization.h"
 #include <cassert>
+#include <memory>
 #ifndef DISABLE_OUTPUT_WRITERS
 #include "output_writer/output_writer_paraview_parallel.h"
 #include "output_writer/output_writer_text_parallel.h"
@@ -17,6 +18,7 @@ Simulation::Simulation(Settings *settings)
       settings->physicalSize[1] / settings->nCells[1]};
 
   // Initialize domain partitioning
+  partitioning_ = std::make_shared<Partitioning>();
   partitioning_->initialize(settings->nCells);
 
   // Initialize discretizations based on partitioning
