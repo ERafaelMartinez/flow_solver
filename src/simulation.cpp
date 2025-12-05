@@ -1,7 +1,9 @@
 #include "simulation.h"
+#include "discretization/discretization.h"
+#include <cassert>
 #ifndef DISABLE_OUTPUT_WRITERS
-#include "output_writer/output_writer_paraview.h"
-#include "output_writer/output_writer_text.h"
+#include "output_writer/output_writer_paraview_parallel.h"
+#include "output_writer/output_writer_text_parallel.h"
 #endif
 #include <algorithm>
 
@@ -9,53 +11,80 @@
 // based on the simulation settings.
 Simulation::Simulation(Settings *settings)
     : settings_(settings), time_step_(0.0), simulation_time_(0.0) {
-  // Initialize staggered-grid/grid-discretization based on settings
+  // Calculate cell size based on physical size and number of cells
   std::array<double, 2> cellSize = {
       settings->physicalSize[0] / settings->nCells[0],
       settings->physicalSize[1] / settings->nCells[1]};
 
-  if (settings->useDonorCell) {
+  // Initialize domain partitioning
+  partitioning_->initialize(settings->nCells);
+
+  // Initialize discretizations based on partitioning
+  initDiscretization_(partitioning_->nCellsLocal(), cellSize);
+
+  // Initialize pressure solver based on settings
+  initPressureSolver_();
+
+  // Initialize output writers
+  initOutputWriters_();
+}
+
+// Create discretization based on settings
+void Simulation::initDiscretization_(
+  std::array<int, 2> nCells, std::array<double, 2> cellSize) {
+  if (settings_->useDonorCell) {
     #ifndef NDEBUG
         std::cout << "Using donor cells!" << std::endl;
     #endif
-    discretization_ = std::make_shared<DonorCell>(settings->nCells, cellSize,
-                                                  settings->alpha);
+    discretization_ = std::make_shared<DonorCell>(nCells, cellSize, settings_->alpha);
   } else {
     #ifndef NDEBUG
         std::cout << "Using central differences!" << std::endl;
     #endif
-    discretization_ =
-        std::make_shared<CentralDifferences>(settings->nCells, cellSize);
+    discretization_ = std::make_shared<CentralDifferences>(nCells, cellSize);
   }
 
-  // Initialize pressure solver based on settings
-  if (settings->pressureSolver == "GaussSeidel") {
+  // validate size of field variables:
+  // each variable hast two ghost cells on each direction
+  int nCellsExpected = (nCells[0] + 2) * (nCells[1] + 2);
+  assert(discretization_->u().data().size() == nCellsExpected);
+  assert(discretization_->v().data().size() == nCellsExpected);
+}
+
+// Create pressure solver based on settings
+void Simulation::initPressureSolver_() {
+  if (settings_->pressureSolver == "GaussSeidel") {
     #ifndef NDEBUG
-        std::cout << "Using gauss seider solver!" << std::endl;
+        std::cout << "Using Gauss Seidel solver!" << std::endl;
     #endif
     pressure_solver_ = std::make_shared<GaussSeidelPressureSolver>(
-        discretization_, settings->epsilon,
-        settings->maximumNumberOfIterations);
-  } else if (settings->pressureSolver == "SOR") {
+        discretization_, settings_->epsilon,
+        settings_->maximumNumberOfIterations);
+  } else if (settings_->pressureSolver == "SOR") {
     #ifndef NDEBUG
         std::cout << "Using SOR solver!" << std::endl;
     #endif
     pressure_solver_ = std::make_shared<SORPressureSolver>(
-        discretization_, settings->epsilon,
-        settings->maximumNumberOfIterations, settings->omega);
+        discretization_, settings_->epsilon, settings_->maximumNumberOfIterations,
+        settings_->omega);
   } else {
     throw std::invalid_argument("Unknown pressure solver type");
   }
+}
 
+// Initialize output writers
+void Simulation::initOutputWriters_() {
   // create writers
   #ifndef DISABLE_OUTPUT_WRITERS
-  // TODO: replace partitioning with a real one, this one is used to make the compiler happy
-  Partitioning p;
-    #ifndef NDEBUG
-      writers_.push_back(std::make_unique<OutputWriterText>(discretization_, p));
-    #endif
+  #ifndef NDEBUG
+    writers_.push_back(
+      std::make_unique<OutputWriterTextParallel>(discretization_, partitioning_)
+    );
+  #endif
     // BUG: Fix bug inside
-    writers_.push_back(std::make_unique<OutputWriterParaview>(discretization_, p));
+    writers_.push_back(
+      std::make_unique<OutputWriterParaviewParallel>(discretization_, partitioning_)
+    );
   #endif
 }
 
@@ -71,8 +100,8 @@ void Simulation::setBoundaryConditionsVelocity() {
   // to the velocity u, and v fields based on settings
 
   // get reference to u, v field variables
-  FieldVariable& u = discretization_->u();
-  FieldVariable& v = discretization_->v();
+  FieldVariable &u = discretization_->u();
+  FieldVariable &v = discretization_->v();
 
   // Apply top and bottom boundary conditions
   std::array<double, 2> dirichletBcBottom = settings_->dirichletBcBottom;
@@ -107,9 +136,10 @@ void Simulation::setBoundaryConditionsVelocity() {
   std::array<double, 2> dirichletBcLeft = settings_->dirichletBcLeft;
   std::array<double, 2> dirichletBcRight = settings_->dirichletBcRight;
 
-  // We start and end in the indices of the ghost cells to 
+  // We start and end in the indices of the ghost cells to
   // prioritize the left-right boundary conditions to the corners
-  for (int j = discretization_->uJBegin() - 1; j <= discretization_->uJEnd() + 1; ++j) {
+  for (int j = discretization_->uJBegin() - 1;
+       j <= discretization_->uJEnd() + 1; ++j) {
     // Left boundary:
     // The u value of the ghost cell falls directly at the boundary so we set it
     // directly
@@ -139,34 +169,37 @@ void Simulation::setBoundaryConditionsVelocity() {
     v.at(discretization_->vIEnd() + 1, j) =
         (2 * dirichletBcRight[1] - v.at(discretization_->vIEnd(), j));
   }
-
 }
 
 // Method to apply/set boundary conditions for F, and G
 void Simulation::setBoundaryConditionsFG() {
-  // Override Boundary values to F and G based to guarantee 
+  // Override Boundary values to F and G based to guarantee
   // Neumann BC for the pressure posisson equation.
 
   // get reference to f, g field variables
-  FieldVariable& f = discretization_->f();
-  FieldVariable& g = discretization_->g();
-  const FieldVariable& v = discretization_->v();
-  const FieldVariable& u = discretization_->u();
+  FieldVariable &f = discretization_->f();
+  FieldVariable &g = discretization_->g();
+  const FieldVariable &v = discretization_->v();
+  const FieldVariable &u = discretization_->u();
 
   // Apply top and bottom boundary conditions
   for (int i = discretization_->fIBegin(); i <= discretization_->fIEnd(); ++i) {
     // G's boundary condition is derived/chosen from the Neumann BC for p:
     // g(i, 0) = v(i, 0) = dirichletBcBottom[1]
-    f.at(i, discretization_->fJBegin() - 1) = u.at(i, discretization_->fJBegin() - 1);
+    f.at(i, discretization_->fJBegin() - 1) =
+        u.at(i, discretization_->fJBegin() - 1);
 
     // G's boundary condition is derived/chosen from the Neumann BC for p:
     // g(i, jmax) = v(i, jmax) = dirichletBcTop[1]
-    f.at(i, discretization_->fJEnd()+1) = u.at(i, discretization_->fJEnd()+1);
-    //g.at(i, discretization_->gJEnd() + 1) = v.at(i, discretization_->vJEnd() + 1);
+    f.at(i, discretization_->fJEnd() + 1) =
+        u.at(i, discretization_->fJEnd() + 1);
+    // g.at(i, discretization_->gJEnd() + 1) = v.at(i, discretization_->vJEnd()
+    // + 1);
   }
 
   for (int i = discretization_->gIBegin(); i <= discretization_->gIEnd(); ++i) {
-    g.at(i, discretization_->gJBegin() - 1) = v.at(i, discretization_->gJBegin() - 1);
+    g.at(i, discretization_->gJBegin() - 1) =
+        v.at(i, discretization_->gJBegin() - 1);
 
     // F's boundary condition is derived/chosen from the Neumann BC for p:
     // f(i,jmax) = u(i,jmax) = dirichletBcTop[0];
@@ -179,25 +212,28 @@ void Simulation::setBoundaryConditionsFG() {
   // left-right boundary conditions to the corners of the extended/ghost domain
   // as well
   for (int j = discretization_->fJBegin() - 1;
-        j <= discretization_->fJEnd() + 1; ++j) {
+       j <= discretization_->fJEnd() + 1; ++j) {
 
-      // F's boundary condition is derived/chosen from the Neumann BC for p:
-      // f(0, j) = u(0, j) = dirichletBcLeft[0]
-      g.at(discretization_->gIBegin() - 1, j) = v.at(discretization_->gIBegin() - 1, j);
+    // F's boundary condition is derived/chosen from the Neumann BC for p:
+    // f(0, j) = u(0, j) = dirichletBcLeft[0]
+    g.at(discretization_->gIBegin() - 1, j) =
+        v.at(discretization_->gIBegin() - 1, j);
 
-      // F's boundary condition is derived/chosen from the Neumann BC for p:
-      // f(imax, j) = u(imax, j) = dirichletBcRight[0];
-      // g.at(discretization_->gIEnd(), j) = v.at(discretization_->gIEnd(), j);
-      g.at(discretization_->gIEnd() + 1, j) = v.at(discretization_->gIEnd() + 1, j);
-    }
+    // F's boundary condition is derived/chosen from the Neumann BC for p:
+    // f(imax, j) = u(imax, j) = dirichletBcRight[0];
+    // g.at(discretization_->gIEnd(), j) = v.at(discretization_->gIEnd(), j);
+    g.at(discretization_->gIEnd() + 1, j) =
+        v.at(discretization_->gIEnd() + 1, j);
+  }
 
-    for (int j = discretization_->fJBegin() - 1;
-         j <= discretization_->fJEnd() + 1; ++j) {
+  for (int j = discretization_->fJBegin() - 1;
+       j <= discretization_->fJEnd() + 1; ++j) {
 
-      f.at(discretization_->fIBegin() - 1, j) = u.at(discretization_->fIBegin() - 1, j);
+    f.at(discretization_->fIBegin() - 1, j) =
+        u.at(discretization_->fIBegin() - 1, j);
 
-      f.at(discretization_->fIEnd(), j) = u.at(discretization_->fIEnd(), j);
-    }
+    f.at(discretization_->fIEnd(), j) = u.at(discretization_->fIEnd(), j);
+  }
 }
 
 // Compute timestep based on the stability criteria
@@ -217,20 +253,22 @@ double Simulation::computeNextTimeStepSize() {
   double v_max = discretization_->v().maxMagnitude();
 
   #ifndef NDEBUG
-    std::cout << "\t u_max, v_max = " << u_max << ", " << v_max << std::endl; 
+    std::cout << "\t u_max, v_max = " << u_max << ", " << v_max << std::endl;
   #endif
-       
+
   double conv_dt_u = dx / std::abs(u_max);
   double conv_dt_v = dy / std::abs(v_max);
   double conv_dt = std::min(conv_dt_u, conv_dt_v);
 
   // take the smallest physics-induced dt and scale with safety factor
-  double dt = std::min(diff_dt, conv_dt) * settings_->tau; 
+  double dt = std::min(diff_dt, conv_dt) * settings_->tau;
 
   // limit the maximum timestep size using the settings
   #ifndef NDEBUG
-    std::cout << "\t Computed dt: " << std::min(dt, settings_->maximumDt) << std::endl;
+    std::cout << "\t Computed dt: " << std::min(dt, settings_->maximumDt)
+              << std::endl;
   #endif
+
   return std::min(dt, settings_->maximumDt);
 }
 
@@ -242,17 +280,17 @@ void Simulation::computeRHS() {
   double dy = discretization_->cellSize()[1];
   double dt = time_step_;
 
-  const FieldVariable& F = discretization_->f();
-  const FieldVariable& G = discretization_->g();
-  FieldVariable& rhs = discretization_->rhs();
+  const FieldVariable &F = discretization_->f();
+  const FieldVariable &G = discretization_->g();
+  FieldVariable &rhs = discretization_->rhs();
 
-    for (int j = discretization_->rhsJBegin(); j <= discretization_->rhsJEnd();
-         j++) {
-            for (int i = discretization_->rhsIBegin(); i <= discretization_->rhsIEnd(); i++) {
+  for (int j = discretization_->rhsJBegin(); j <= discretization_->rhsJEnd();
+       j++) {
+    for (int i = discretization_->rhsIBegin(); i <= discretization_->rhsIEnd();
+         i++) {
 
-      rhs.at(i, j) = (1. / dt) *
-                     (1/ dx * (F.at(i, j) - F.at(i - 1, j))  +
-                       1/ dy * (G.at(i, j) - G.at(i, j - 1)));
+      rhs.at(i, j) = (1. / dt) * (1 / dx * (F.at(i, j) - F.at(i - 1, j)) +
+                                  1 / dy * (G.at(i, j) - G.at(i, j - 1)));
     }
   }
 }
@@ -265,16 +303,16 @@ void Simulation::computeIntermediateVelocities() {
   double gx = settings_->g[0];
   double gy = settings_->g[1];
 
-  const FieldVariable& u = discretization_->u();
-  const FieldVariable& v = discretization_->v();
-  FieldVariable& F = discretization_->f();
-  FieldVariable& G = discretization_->g();
+  const FieldVariable &u = discretization_->u();
+  const FieldVariable &v = discretization_->v();
+  FieldVariable &F = discretization_->f();
+  FieldVariable &G = discretization_->g();
 
   #ifndef NDEBUG
     std::cout << "\t\t Computing F..." << std::endl;
   #endif
-  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd();
-       ++i) {
+
+  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
     for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd();
          ++j) {
       // Compute F(i,j)
@@ -292,7 +330,8 @@ void Simulation::computeIntermediateVelocities() {
     std::cout << "\t\t Computing G..." << std::endl;
   #endif
   for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
-    for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd(); ++j) {
+    for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd();
+         ++j) {
       // Compute G(i,j)
       double d2vdx2 = discretization_->computeD2vDx2(i, j);
       double d2vdy2 = discretization_->computeD2vDy2(i, j);
@@ -315,13 +354,12 @@ void Simulation::computeVelocities() {
   // Implementation of velocity computation goes here
   double dt = time_step_;
 
-  FieldVariable& u = discretization_->u();
-  FieldVariable& v = discretization_->v();
-  const FieldVariable& F = discretization_->f();
-  const FieldVariable& G = discretization_->g();
-  
-  for (int i = discretization_->uIBegin(); i < discretization_->uIEnd();
-       ++i) {
+  FieldVariable &u = discretization_->u();
+  FieldVariable &v = discretization_->v();
+  const FieldVariable &F = discretization_->f();
+  const FieldVariable &G = discretization_->g();
+
+  for (int i = discretization_->uIBegin(); i < discretization_->uIEnd(); ++i) {
     for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd();
          ++j) {
       double dpdx = discretization_->computeDpDx(i, j);
@@ -330,7 +368,8 @@ void Simulation::computeVelocities() {
   }
 
   for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
-    for (int j = discretization_->vJBegin(); j < discretization_->vJEnd(); ++j) {
+    for (int j = discretization_->vJBegin(); j < discretization_->vJEnd();
+         ++j) {
       double dpdy = discretization_->computeDpDy(i, j);
       v.at(i, j) = G.at(i, j) - dt * dpdy;
     }
@@ -340,7 +379,8 @@ void Simulation::computeVelocities() {
 // Output the current state of the simulation
 // using the OutputWritter class
 void Simulation::outputSimulationState(double outputIndex) {
-  for (std::vector<std::unique_ptr<OutputWriter>>::size_type i = 0; i < writers_.size(); i++) {
+  for (std::vector<std::unique_ptr<OutputWriter>>::size_type i = 0;
+       i < writers_.size(); i++) {
     writers_[i]->writeFile(outputIndex);
   }
 }
@@ -353,7 +393,6 @@ void Simulation::runTimestep() {
   #endif
   setBoundaryConditionsVelocity();
 
-
   // 1. Compute next time step size based on the values of
   // the current velocity field and the stability criteria
   #ifndef NDEBUG
@@ -362,15 +401,13 @@ void Simulation::runTimestep() {
   time_step_ = computeNextTimeStepSize();
   simulation_time_ += time_step_;
 
-
-
   // 3. Compute intermediate velocities F, G
   #ifndef NDEBUG
     std::cout << "\tComputing intermediate velocity field" << std::endl;
   #endif
   computeIntermediateVelocities();
 
-    // 2. Enforce boundary conditions for F and G
+  // 2. Enforce boundary conditions for F and G
   #ifndef NDEBUG
     std::cout << "\tSetting boundaries for F and G..." << std::endl;
   #endif
@@ -406,8 +443,9 @@ void Simulation::run() {
   int stepNumber = 0;
   while (simulation_time_ < settings_->endTime) {
     #ifndef NDEBUG
-    std::cout << "Simulation step " << stepNumber << ":" << std::endl;
-    std::cout << "\t Current simulation time: " << simulation_time_ << std::endl;
+      std::cout << "Simulation step " << stepNumber << ":" << std::endl;
+      std::cout << "\t Current simulation time: " << simulation_time_
+                << std::endl;
     #endif
     runTimestep();
     stepNumber++;

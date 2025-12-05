@@ -11,7 +11,7 @@ class OutputWriterTextParallel : public OutputWriterText {
 public:
   //! constructor
   OutputWriterTextParallel(std::shared_ptr<Discretization> discretization,
-                           const Partitioning &partitioning)
+                           std::shared_ptr<Partitioning> partitioning)
       : OutputWriterText(discretization, partitioning) {}
 
   //! write current velocities to file, filename is output_<count>.<rankNo>.txt

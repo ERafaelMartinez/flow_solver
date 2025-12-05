@@ -13,6 +13,7 @@ add_subdirectory(staggered_grid)
 add_subdirectory(discretization)
 add_subdirectory(storage)
 add_subdirectory(partitioning)
+add_subdirectory(communication)
 
 # Add the project directory to include directories, to be able to include all project header files from anywhere
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR})

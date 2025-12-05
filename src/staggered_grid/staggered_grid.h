@@ -26,10 +26,12 @@ private:
   FieldVariable _g;
   FieldVariable _f;
 
-  std::array<int, 2> getVarGridSize(std::array<int, 2> gridSize,
-                                    std::array<int, 4> boundaries) const {
-    return {gridSize[0] + boundaries[1] + boundaries[3],
-            gridSize[1] + boundaries[0] + boundaries[2]};
+  std::array<int, 2> getVarGridSize(
+    std::array<int, 2> gridSize, std::array<int, 4> boundaries) const {
+    std::array<int, 2> varGridSize;
+    varGridSize[0] = gridSize[0] + boundaries[1] + boundaries[3];
+    varGridSize[1] = gridSize[1] + boundaries[0] + boundaries[2];
+    return varGridSize;
   }
 
   int getInnerIndex(FieldVariable var, std::array<int, 4> boundaries,
@@ -60,14 +62,16 @@ public:
 
   // Alias for cellSize, used by Discretization callers expecting meshWidth
   const std::array<double, 2> &meshWidth() const { return _cellSize; }
-  // Further aliases for cellSize, used by Discretization callers expecting meshWidth
+  // Further aliases for cellSize, used by Discretization callers expecting
+  // meshWidth
   const double &dx() const { return _cellSize[0]; }
   const double &dy() const { return _cellSize[1]; }
 
   // Alias for gridSize, used by Discretization callers expecting nCells
   const std::array<int, 2> &nCells() const { return _gridSize; }
-  
-  // Further aliases for gridSize, used by Discretization callers expecting nCells
+
+  // Further aliases for gridSize, used by Discretization callers expecting
+  // nCells
   const int &nCellsX() const { return _gridSize[0]; }
   const int &nCellsY() const { return _gridSize[1]; }
 
