@@ -47,16 +47,84 @@ double FieldVariable::interpolateAt(double physicalXPos,
 }
 
 void FieldVariable::setToZero() {
-  for (int i = 0; i < size()[0]*size()[1]; ++i) {
+  for (int i = 0; i < size()[0] * size()[1]; ++i) {
     data()[i] = 0.0;
   }
 }
 
 double FieldVariable::maxMagnitude() {
   double max_val = 0.0;
-  for (int i = 0; i < size()[0]*size()[1]; ++i) {
+  for (int i = 0; i < size()[0] * size()[1]; ++i) {
     double ith_val = data()[i];
-    if (std::abs(ith_val) > max_val) {max_val = std::abs(ith_val);}
+    if (std::fabs(ith_val) > max_val) {
+      max_val = std::fabs(ith_val);
+    }
   }
   return max_val;
+}
+
+// Boundary getters - extract boundary data for MPI communication
+std::vector<double> FieldVariable::getLeftBoundary() const {
+  std::vector<double> leftCells;
+  leftCells.reserve(_size[1]);
+  for (int j = 0; j < _size[1]; ++j) {
+    leftCells.push_back(at(0, j));
+  }
+  return leftCells;
+}
+
+std::vector<double> FieldVariable::getRightBoundary() const {
+  std::vector<double> rightCells;
+  rightCells.reserve(_size[1]);
+  for (int j = 0; j < _size[1]; ++j) {
+    rightCells.push_back(at(_size[0] - 1, j));
+  }
+  return rightCells;
+}
+
+std::vector<double> FieldVariable::getTopBoundary() const {
+  std::vector<double> topCells;
+  topCells.reserve(_size[0]);
+  for (int i = 0; i < _size[0]; ++i) {
+    topCells.push_back(at(i, _size[1] - 1));
+  }
+  return topCells;
+}
+
+std::vector<double> FieldVariable::getBottomBoundary() const {
+  std::vector<double> bottomCells;
+  bottomCells.reserve(_size[0]);
+  for (int i = 0; i < _size[0]; ++i) {
+    bottomCells.push_back(at(i, 0));
+  }
+  return bottomCells;
+}
+
+// Boundary setters - update boundary data after MPI communication
+void FieldVariable::setLeftBoundary(const std::vector<double> &data) {
+  assert(data.size() == _size[1]);
+  for (int j = 0; j < _size[1]; ++j) {
+    at(0, j) = data[j];
+  }
+}
+
+void FieldVariable::setRightBoundary(const std::vector<double> &data) {
+  assert(data.size() == _size[1]);
+  for (int j = 0; j < _size[1]; ++j) {
+    at(_size[0] - 1, j) = data[j];
+  }
+}
+
+void FieldVariable::setTopBoundary(const std::vector<double> &data) {
+  assert(data.size() == _size[0]);
+  for (int i = 0; i < _size[0]; ++i) {
+    at(i, _size[1] - 1) = data[i];
+  }
+}
+
+void FieldVariable::setBottomBoundary(const std::vector<double> &data) {
+  assert(data.size() == _size[0]);
+  for (int i = 0; i < _size[0]; ++i) {
+    at(i, 0) = data[i];
+  }
 }
