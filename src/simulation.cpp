@@ -47,8 +47,8 @@ void Simulation::initDiscretization_(
   // validate size of field variables:
   // each variable hast two ghost cells on each direction
   int nCellsExpected = (nCells[0] + 2) * (nCells[1] + 2);
-  assert(discretization_->u().size()[0] * discretization_->u().size()[1] == nCellsExpected);
-  assert(discretization_->v().size()[0] * discretization_->v().size()[1] == nCellsExpected);
+  assert(discretization_->u().data().size() == nCellsExpected);
+  assert(discretization_->v().data().size() == nCellsExpected);
 }
 
 // Create pressure solver based on settings
