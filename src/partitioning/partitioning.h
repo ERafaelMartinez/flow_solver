@@ -53,9 +53,9 @@ public:
   std::array<int, 2> nodeOffset() const;
 
 protected:
-  std::array<int, 2> nCellsGlobal_;
-  std::array<int, 2> nCellsLocal_;
-  std::array<int, 2> nodeOffset_;
+  std::array<int, 2> nCellsGlobal_ = {0, 0};
+  std::array<int, 2> nCellsLocal_ = {0,0};
+  std::array<int, 2> nodeOffset_ = {0,0};
   int ownRankNo_;
   int nRanks_;
 

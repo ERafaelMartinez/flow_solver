@@ -7,7 +7,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     build-essential \
     g++ \
+    gdb \
     cmake \
+    cmake-curses-gui \
     git \
     wget \
     curl \

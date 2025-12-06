@@ -16,37 +16,35 @@ void Partitioning::initialize(std::array<int, 2> nCellsGlobal) {
   // determine the number of partitions/subdomains in x and y direction
   int nSubdomainsX = std::sqrt(processesCount);
   int nSubdomainsY = std::ceil(processesCount / nSubdomainsX);
-  // TODO: Find a better way that would work with other numbers 
+  // TODO: Find a better way that would work with other numbers
   // (real squares, close to squares, prime)
 
   // determine the position (indices) of the partition
-  int subdomainColIndex = ownRank % nSubdomainsX;
-  int subdomainRowIndex = ownRank / nSubdomainsX;
+  int subdomainColIndex = ownRank / nSubdomainsY;
+  int subdomainRowIndex = ownRank % nSubdomainsY;
 
-  nCellsLocal_[0] = computeSubdomainSizeInAxis(
-    nCellsGlobal[0], nSubdomainsX, subdomainColIndex
-  );
-  nCellsLocal_[1] = computeSubdomainSizeInAxis(
-    nCellsGlobal[1], nSubdomainsY, subdomainRowIndex
-  );
+  nCellsLocal_[0] = computeSubdomainSizeInAxis(nCellsGlobal[0], nSubdomainsX,
+                                               subdomainColIndex);
+  nCellsLocal_[1] = computeSubdomainSizeInAxis(nCellsGlobal[1], nSubdomainsY,
+                                               subdomainRowIndex);
 
   // Determine the offsets
   // TODO: Check if the assignment (col vs row) is correct and how other classes
   // expect to use this
-  nodeOffset_[0] =
-      computeSubdomainAxisOffset(nCellsGlobal_[0], nSubdomainsX, subdomainColIndex);
-  nodeOffset_[1] =
-      computeSubdomainAxisOffset(nCellsGlobal_[1], nSubdomainsY, subdomainRowIndex);
+  nodeOffset_[0] = computeSubdomainAxisOffset(nCellsGlobal_[0], nSubdomainsX,
+                                              subdomainColIndex);
+  nodeOffset_[1] = computeSubdomainAxisOffset(nCellsGlobal_[1], nSubdomainsY,
+                                              subdomainRowIndex);
 
   // determine the neighbour partitions
-  neighbourLeft_ =
-      getProcessAt(subdomainColIndex - 1, subdomainRowIndex, nSubdomainsX, nSubdomainsY);
-  neighbourRight_ =
-      getProcessAt(subdomainColIndex + 1, subdomainRowIndex, nSubdomainsX, nSubdomainsY);
-  neighbourBottom_ =
-      getProcessAt(subdomainColIndex, subdomainRowIndex - 1, nSubdomainsX, nSubdomainsY);
-  neighbourTop_ =
-      getProcessAt(subdomainColIndex, subdomainRowIndex + 1, nSubdomainsX, nSubdomainsY);
+  neighbourLeft_ = getProcessAt(subdomainColIndex - 1, subdomainRowIndex,
+                                nSubdomainsX, nSubdomainsY);
+  neighbourRight_ = getProcessAt(subdomainColIndex + 1, subdomainRowIndex,
+                                 nSubdomainsX, nSubdomainsY);
+  neighbourBottom_ = getProcessAt(subdomainColIndex, subdomainRowIndex - 1,
+                                  nSubdomainsX, nSubdomainsY);
+  neighbourTop_ = getProcessAt(subdomainColIndex, subdomainRowIndex + 1,
+                               nSubdomainsX, nSubdomainsY);
 }
 
 int Partitioning::getProcessAt(int i, int j, int numOfColumns,
@@ -71,7 +69,6 @@ int Partitioning::computeSubdomainSizeInAxis(int globalCellCountInAxis,
   }
   return sizeInAxis;
 }
-
 
 int Partitioning::computeSubdomainAxisOffset(int globalCellCountInAxis,
                                              int axisPartitionCount,
