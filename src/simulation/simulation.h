@@ -22,9 +22,6 @@ public:
   // Destructor
   ~Simulation();
 
-  // Method to apply/set boundary conditions for velocity field
-  void setBoundaryConditionsVelocity();
-
   // Compute timestep based on the stability criteria
   // derived from the grid size, reynolds number,
   // and maximum velocities
@@ -36,9 +33,6 @@ public:
 
   // Method to compute the intermediate velocities F, G
   void computeIntermediateVelocities();
-
-  // Method to apply/set boundary conditions for F and G
-  void setBoundaryConditionsFG();
 
   // Solve the pressure equation
   void solvePressureEquation();
@@ -61,7 +55,7 @@ private:
   std::shared_ptr<Discretization> discretization_;
   std::shared_ptr<PressureSolver> pressure_solver_;
   std::shared_ptr<BoundaryManager> boundaryManager_;
-  std::vector<std::unique_ptr<OutputWriter>> writers_;
+  std::vector< std::unique_ptr<OutputWriter> > writers_;
 
   void initPartitioning_();
 

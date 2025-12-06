@@ -19,14 +19,25 @@ void BoundaryManager::setBoundaryConditionsVelocity() {
   // the subdomain which correspond to the domain boundaries
 
   // Apply each boundary side separately for parallel control
-  applyTopBoundaryU();
-  applyBottomBoundaryU();
-  applyTopBoundaryV();
-  applyBottomBoundaryV();
-  applyLeftBoundaryU();
-  applyRightBoundaryU();
-  applyLeftBoundaryV();
-  applyRightBoundaryV();
+  if (partitioning_->ownPartitionContainsTopBoundary()) {
+    applyTopBoundaryU();
+    applyTopBoundaryV();
+  }
+
+  if (partitioning_->ownPartitionContainsBottomBoundary()) {
+    applyBottomBoundaryU();
+    applyBottomBoundaryV();
+  }
+
+  if (partitioning_->ownPartitionContainsLeftBoundary()) {
+    applyLeftBoundaryU();
+    applyLeftBoundaryV();
+  }
+
+  if (partitioning_->ownPartitionContainsRightBoundary()) {
+    applyRightBoundaryU();
+    applyRightBoundaryV();
+  }
 }
 
 void BoundaryManager::setBoundaryConditionsFG() {
@@ -37,14 +48,25 @@ void BoundaryManager::setBoundaryConditionsFG() {
   // the subdomain which correspond to the domain boundaries
 
   // Apply each boundary side separately for parallel control
-  applyTopBoundaryF();
-  applyBottomBoundaryF();
-  applyTopBoundaryG();
-  applyBottomBoundaryG();
-  applyLeftBoundaryF();
-  applyRightBoundaryF();
-  applyLeftBoundaryG();
-  applyRightBoundaryG();
+  if (partitioning_->ownPartitionContainsTopBoundary()) {
+    applyTopBoundaryF();
+    applyTopBoundaryG();
+  }
+
+  if (partitioning_->ownPartitionContainsBottomBoundary()) {
+    applyBottomBoundaryF();
+    applyBottomBoundaryG();
+  }
+
+  if (partitioning_->ownPartitionContainsLeftBoundary()) {
+    applyLeftBoundaryF();
+    applyLeftBoundaryG();
+  }
+
+  if (partitioning_->ownPartitionContainsRightBoundary()) {
+    applyRightBoundaryF();
+    applyRightBoundaryG();
+  }
 }
 
 // =============================================================================

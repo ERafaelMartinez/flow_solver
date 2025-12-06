@@ -105,16 +105,6 @@ Simulation::~Simulation() {
   // delete pressure_solver_;
 }
 
-// Method to apply/set boundary conditions for the velocity field
-void Simulation::setBoundaryConditionsVelocity() {
-  boundaryManager_->setBoundaryConditionsVelocity();
-}
-
-// Method to apply/set boundary conditions for F and G
-void Simulation::setBoundaryConditionsFG() {
-  boundaryManager_->setBoundaryConditionsFG();
-}
-
 // Compute timestep based on the stability criteria
 // derived from the grid size, reynolds number,
 // and maximum velocities
@@ -258,7 +248,7 @@ void Simulation::computeVelocities() {
 // Output the current state of the simulation
 // using the OutputWritter class
 void Simulation::outputSimulationState(double outputIndex) {
-  for (std::vector<std::unique_ptr<OutputWriter>>::size_type i = 0;
+  for (std::vector< std::unique_ptr<OutputWriter> >::size_type i = 0;
        i < writers_.size(); i++) {
     writers_[i]->writeFile(outputIndex);
   }
@@ -270,7 +260,7 @@ void Simulation::runTimestep() {
 #ifndef NDEBUG
   std::cout << "\tSetting velocity boundaries..." << std::endl;
 #endif
-  setBoundaryConditionsVelocity();
+  boundaryManager_->setBoundaryConditionsVelocity();
 
 // 1.1 Compute next time step size based on the values of
 // the current velocity field and the stability criteria
@@ -282,7 +272,7 @@ void Simulation::runTimestep() {
 #ifndef NDEBUG
   std::cout << "\tExchanging timestep..." << std::endl;
 #endif
-  time_step_ = dataExchanger_->getMaximumTimeStepSize(time_step_);
+  time_step_ = dataExchanger_->getMinimumTimeStepSize(time_step_);
   simulation_time_ += time_step_;
 
 // 3. Compute intermediate velocities F, G
@@ -295,7 +285,7 @@ void Simulation::runTimestep() {
 #ifndef NDEBUG
   std::cout << "\tSetting boundaries for F and G..." << std::endl;
 #endif
-  setBoundaryConditionsFG();
+  boundaryManager_->setBoundaryConditionsFG();
 
 // 4. Compute RHS for pressure poisson equation
 #ifndef NDEBUG
