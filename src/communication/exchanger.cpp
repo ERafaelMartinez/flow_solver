@@ -187,3 +187,65 @@ void DataExchanger::exchange(FieldVariable &fieldVar) {
   // unpack data from the buffers into the field variables
   unpackDataBuffers_(receiveBuffers, fieldVar);
 }
+
+double DataExchanger::getMaximumTimeStepSize(double &timeStepSize) {
+  // clear request pools
+  sendRequests_.clear();
+  receiveRequests_.clear();
+
+  // all non-main ranks send their time step size to the main rank
+  if (partitioning_->ownRankNo != 0) {
+    std::shared_ptr<DataBuffer> sendBuffer = std::make_shared<DataBuffer>(1);
+    sendBuffer->update(&timeStepSize);
+    
+    MPI_Request sendRequest;
+    MPI_Isend(
+      sendBuffer->asArray().data(), sendBuffer->asArray().size(),
+      MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &sendRequest
+    );
+    sendRequests_.push_back(sendRequest);
+  }
+
+  // Then, the main rank receives the time step size from the other ranks
+  // thus we need one receive buffer for each rank with non-main rank
+  if (partitioning_->ownRankNo == 0) {
+    // create receive buffers one per non-main rank
+    std::vector< std::shared_ptr<DataBuffer> > receiveBuffers;
+    receiveBuffers.resize(partitioning_->nRanks() - 1, std::make_shared<DataBuffer>(1));
+
+    // create receive requests one per non-main rank
+    receiveRequests_.resize(partitioning_->nRanks() - 1, MPI_Request());
+    for (int i = 1; i < partitioning_->nRanks(); ++i) {
+      MPI_Irecv(
+        receiveBuffers[i - 1]->asArray().data(),
+        receiveBuffers[i - 1]->asArray().size(),
+        MPI_DOUBLE, i, 0, MPI_COMM_WORLD,
+        &receiveRequests_[i - 1]
+      );
+    }
+    // wait for all receives to finish
+    MPI_Waitall(
+      receiveRequests_.size(), receiveRequests_.data(), MPI_STATUSES_IGNORE
+    );
+    // extract maximum time step size from the buffers into the time step size
+    double maxTimeStepSize = timeStepSize;
+    for (int i = 1; i < partitioning_->nRanks(); ++i) {
+      maxTimeStepSize = std::max(maxTimeStepSize, receiveBuffers[i]->asArray()[0]);
+    }
+
+    // communicate maximum time step size to all ranks
+    MPI_Bcast(&maxTimeStepSize, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    // wait for broadcast to finish
+    MPI_Waitall(
+      receiveRequests_.size(), receiveRequests_.data(), MPI_STATUSES_IGNORE
+    );
+
+    return maxTimeStepSize;
+  } else {
+    // the other ranks read the maximum time step size from the main rank
+    double maxTimeStepSize;
+    MPI_Bcast(&maxTimeStepSize, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    return maxTimeStepSize;
+  }
+
+}

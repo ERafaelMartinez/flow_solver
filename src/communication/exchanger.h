@@ -43,6 +43,9 @@ public:
   // exchange variables via MPI with neighbors
   virtual void exchange(FieldVariable &fieldVar) = 0;
 
+  // exchange time step size with main rank
+  virtual double getMaximumTimeStepSize(double &timeStepSize) = 0;
+
 private:
   std::shared_ptr<Partitioning> partitioning_;
   std::array<int, 4> neighborsRank_;
