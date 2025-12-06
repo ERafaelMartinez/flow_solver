@@ -19,6 +19,7 @@ void PressureSolver::solvePressureEquation() {
 
   while (!solutionHasConverged() && iteration < max_iterations_) {
     calcPressureIter();
+    dataExchanger_->exchange(discretization_->p());
     setBoundaryConditions();
     calcRes();
     iteration++;
@@ -71,16 +72,16 @@ bool PressureSolver::solutionHasConverged() {
 
 // Method to apply/set boundary conditions for the pressure field
 void PressureSolver::setBoundaryConditions() {
-  if (partitioning_.ownPartitionContainsBottomBoundary()) {
+  if (partitioning_->ownPartitionContainsBottomBoundary()) {
     setBoundaryConditionsBottom();
   }
-  if (partitioning_.ownPartitionContainsTopBoundary()) {
+  if (partitioning_->ownPartitionContainsTopBoundary()) {
     setBoundaryConditionsTop();
   }
-  if (partitioning_.ownPartitionContainsLeftBoundary()) {
+  if (partitioning_->ownPartitionContainsLeftBoundary()) {
     setBoundaryConditionsLeft();
   }
-  if (partitioning_.ownPartitionContainsRightBoundary()) {
+  if (partitioning_->ownPartitionContainsRightBoundary()) {
     setBoundaryConditionsRight();
   }
 }

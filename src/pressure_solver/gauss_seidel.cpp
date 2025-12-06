@@ -9,7 +9,7 @@
 // Constructor
 GaussSeidelPressureSolver::GaussSeidelPressureSolver(
     std::shared_ptr<Discretization> discretization,
-    const Partitioning &partitioning, double convergence_tol,
+    std::shared_ptr<Partitioning> partitioning, double convergence_tol,
     int max_iterations)
     : PressureSolver(discretization, partitioning, convergence_tol,
                      max_iterations) {}

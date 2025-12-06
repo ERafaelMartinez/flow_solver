@@ -1,6 +1,7 @@
 #pragma once
 
 // In this file, we define the PressureSolver class interface
+#include "../communication/exchanger.h"
 #include "../discretization/discretization.h"
 #include "../partitioning/partitioning.h"
 #include <memory>
@@ -14,10 +15,12 @@ class PressureSolver {
 public:
   // Constructor
   PressureSolver(std::shared_ptr<Discretization> discretization,
-                 const Partitioning &partitioning, double convergence_tol,
-                 int max_iterations)
+                 std::shared_ptr<Partitioning> partitioning,
+                 double convergence_tol, int max_iterations)
       : discretization_(discretization), partitioning_(partitioning),
-        convergence_tol_(convergence_tol), max_iterations_(max_iterations) {}
+        convergence_tol_(convergence_tol), max_iterations_(max_iterations) {
+    dataExchanger_ = std::make_shared<DataExchanger>(partitioning_);
+  }
 
   virtual ~PressureSolver() {}
 
@@ -86,7 +89,8 @@ public:
 
 protected:
   std::shared_ptr<Discretization> discretization_;
-  const Partitioning &partitioning_;
+  std::shared_ptr<Partitioning> partitioning_;
+  std::shared_ptr<DataExchanger> dataExchanger_;
   double res_; // Residual measure for convergence check, has to be
                // calculated/updated in calcPressureIter
   double convergence_tol_;

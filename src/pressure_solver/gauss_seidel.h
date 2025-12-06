@@ -13,7 +13,7 @@ class GaussSeidelPressureSolver : public PressureSolver {
 public:
   // Constructor
   GaussSeidelPressureSolver(std::shared_ptr<Discretization> discretization,
-                            const Partitioning &partitioning,
+                            std::shared_ptr<Partitioning> partitioning,
                             double convergence_tol, int max_iterations);
 
   // Override methods from PressureSolver

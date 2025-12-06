@@ -12,8 +12,8 @@ class SORPressureSolver : public PressureSolver {
 public:
   // Constructor
   SORPressureSolver(std::shared_ptr<Discretization> discretization,
-                    const Partitioning &partitioning, double convergence_tol,
-                    int max_iterations, double omega);
+                    std::shared_ptr<Partitioning> partitioning,
+                    double convergence_tol, int max_iterations, double omega);
 
   /**
    * @brief Calculate the pressure for one iteration using SOR.
