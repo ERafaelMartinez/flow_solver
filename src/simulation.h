@@ -3,6 +3,7 @@
 #include "discretization/central_differences.h"
 #include "discretization/discretization.h"
 #include "discretization/donor_cell.h"
+#include "communication/exchanger.h"
 #include "output_writer/output_writer.h"
 #include "pressure_solver/gauss_seidel.h"
 #include "pressure_solver/pressure_solver.h"
@@ -55,6 +56,7 @@ public:
 private:
   Settings *settings_;
   std::shared_ptr<Partitioning> partitioning_;
+  std::shared_ptr<DataExchanger> dataExchanger_;
   std::shared_ptr<Discretization> discretization_;
   std::shared_ptr<PressureSolver> pressure_solver_;
   std::vector< std::unique_ptr<OutputWriter> > writers_;

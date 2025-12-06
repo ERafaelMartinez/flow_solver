@@ -14,10 +14,14 @@ Simulation::Simulation(Settings *settings)
   // Calculate cell size based on physical size and number of cells
   std::array<double, 2> cellSize = {
       settings->physicalSize[0] / settings->nCells[0],
-      settings->physicalSize[1] / settings->nCells[1]};
+      settings->physicalSize[1] / settings->nCells[1]
+  };
 
   // Initialize domain partitioning
   partitioning_->initialize(settings->nCells);
+
+  // Initialize data exchanger
+  dataExchanger_ = std::make_shared<DataExchanger>(partitioning_);
 
   // Initialize discretizations based on partitioning
   initDiscretization_(partitioning_->nCellsLocal(), cellSize);
@@ -393,12 +397,17 @@ void Simulation::runTimestep() {
   #endif
   setBoundaryConditionsVelocity();
 
-  // 1. Compute next time step size based on the values of
+  // 1.1 Compute next time step size based on the values of
   // the current velocity field and the stability criteria
   #ifndef NDEBUG
     std::cout << "\tComputing timestep..." << std::endl;
   #endif
   time_step_ = computeNextTimeStepSize();
+  // 1.2 obtain maximum time step size from main rank
+  #ifndef NDEBUG
+    std::cout << "\tExchanging timestep..." << std::endl;
+  #endif
+  time_step_ = dataExchanger_->getMaximumTimeStepSize(time_step_);
   simulation_time_ += time_step_;
 
   // 3. Compute intermediate velocities F, G
