@@ -54,8 +54,8 @@ public:
 
 protected:
   std::array<int, 2> nCellsGlobal_ = {0, 0};
-  std::array<int, 2> nCellsLocal_ = {0,0};
-  std::array<int, 2> nodeOffset_ = {0,0};
+  std::array<int, 2> nCellsLocal_ = {0, 0};
+  std::array<int, 2> nodeOffset_ = {0, 0};
   int ownRankNo_;
   int nRanks_;
 
@@ -67,7 +67,10 @@ protected:
   int neighbourBottom_;
 
 private:
-int getProcessAt(int i, int j, int numOfColumns, int numOfRows) const;
+  struct GridSize { int x, y; };
+  GridSize divideProcessesInto2DSubdomainGrid(int processCount);
+
+  int getProcessAt(int i, int j, int numOfColumns, int numOfRows) const;
   int computeSubdomainSizeInAxis(int globalCellCountInAxis,
                                  int axisPartitionCount,
                                  int partitionIndexInAxis) const;
