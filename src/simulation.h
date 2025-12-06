@@ -81,6 +81,16 @@ private:
   void applyLeftBoundaryV();
   void applyRightBoundaryV();
 
+  // Helper methods for applying boundary conditions to F and G
+  void applyTopBoundaryF();
+  void applyBottomBoundaryF();
+  void applyTopBoundaryG();
+  void applyBottomBoundaryG();
+  void applyLeftBoundaryF();
+  void applyRightBoundaryF();
+  void applyLeftBoundaryG();
+  void applyRightBoundaryG();
+
   double time_step_;
   double simulation_time_;
 };

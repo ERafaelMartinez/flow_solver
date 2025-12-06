@@ -231,68 +231,128 @@ void Simulation::applyRightBoundaryV() {
   }
 }
 
-// Method to apply/set boundary conditions for F, and G
+// Method to apply/set boundary conditions for F and G
 void Simulation::setBoundaryConditionsFG() {
-  // Override Boundary values to F and G based to guarantee
-  // Neumann BC for the pressure posisson equation.
+  // Override boundary values of F and G to guarantee
+  // Neumann BC for the pressure Poisson equation.
 
-  // get reference to f, g field variables
+  // The boundary conditions are only applied to the bounds of
+  // the subdomain which correspond to the domain boundaries
+
+  // Apply each boundary side separately for parallel control
+  applyTopBoundaryF();
+  applyBottomBoundaryF();
+  applyTopBoundaryG();
+  applyBottomBoundaryG();
+  applyLeftBoundaryF();
+  applyRightBoundaryF();
+  applyLeftBoundaryG();
+  applyRightBoundaryG();
+}
+
+void Simulation::applyTopBoundaryF() {
   FieldVariable &f = discretization_->f();
-  FieldVariable &g = discretization_->g();
-  const FieldVariable &v = discretization_->v();
   const FieldVariable &u = discretization_->u();
 
-  // Apply top and bottom boundary conditions
   for (int i = discretization_->fIBegin(); i <= discretization_->fIEnd(); ++i) {
-    // G's boundary condition is derived/chosen from the Neumann BC for p:
-    // g(i, 0) = v(i, 0) = dirichletBcBottom[1]
-    f.at(i, discretization_->fJBegin() - 1) =
-        u.at(i, discretization_->fJBegin() - 1);
-
-    // G's boundary condition is derived/chosen from the Neumann BC for p:
-    // g(i, jmax) = v(i, jmax) = dirichletBcTop[1]
+    // F's boundary condition is derived from the Neumann BC for p:
+    // f(i,jmax + 1) = u(i,jmax + 1)
     f.at(i, discretization_->fJEnd() + 1) =
         u.at(i, discretization_->fJEnd() + 1);
-    // g.at(i, discretization_->gJEnd() + 1) = v.at(i, discretization_->vJEnd()
-    // + 1);
   }
+}
+
+void Simulation::applyBottomBoundaryF() {
+  FieldVariable &f = discretization_->f();
+  const FieldVariable &u = discretization_->u();
+
+  for (int i = discretization_->fIBegin(); i <= discretization_->fIEnd(); ++i) {
+    // F's boundary condition is derived from the Neumann BC for p:
+    // f(i, 0) = u(i, 0)
+    f.at(i, discretization_->fJBegin() - 1) =
+        u.at(i, discretization_->fJBegin() - 1);
+  }
+}
+
+void Simulation::applyTopBoundaryG() {
+  FieldVariable &g = discretization_->g();
+  const FieldVariable &v = discretization_->v();
 
   for (int i = discretization_->gIBegin(); i <= discretization_->gIEnd(); ++i) {
-    g.at(i, discretization_->gJBegin() - 1) =
-        v.at(i, discretization_->gJBegin() - 1);
-
-    // F's boundary condition is derived/chosen from the Neumann BC for p:
-    // f(i,jmax) = u(i,jmax) = dirichletBcTop[0];
+    // G's boundary condition is derived from the Neumann BC for p:
+    // g(i, jmax) = v(i, jmax)
     g.at(i, discretization_->gJEnd()) = v.at(i, discretization_->gJEnd());
   }
+}
 
-  // Apply left and right boundary conditions
+void Simulation::applyBottomBoundaryG() {
+  FieldVariable &g = discretization_->g();
+  const FieldVariable &v = discretization_->v();
 
-  // We start and end in the indices of the ghost cells to include the
-  // left-right boundary conditions to the corners of the extended/ghost domain
-  // as well
-  for (int j = discretization_->fJBegin() - 1;
-       j <= discretization_->fJEnd() + 1; ++j) {
-
-    // F's boundary condition is derived/chosen from the Neumann BC for p:
-    // f(0, j) = u(0, j) = dirichletBcLeft[0]
-    g.at(discretization_->gIBegin() - 1, j) =
-        v.at(discretization_->gIBegin() - 1, j);
-
-    // F's boundary condition is derived/chosen from the Neumann BC for p:
-    // f(imax, j) = u(imax, j) = dirichletBcRight[0];
-    // g.at(discretization_->gIEnd(), j) = v.at(discretization_->gIEnd(), j);
-    g.at(discretization_->gIEnd() + 1, j) =
-        v.at(discretization_->gIEnd() + 1, j);
+  for (int i = discretization_->gIBegin(); i <= discretization_->gIEnd(); ++i) {
+    // G's boundary condition is derived from the Neumann BC for p:
+    // g(i, 0) = v(i, 0)
+    g.at(i, discretization_->gJBegin() - 1) =
+        v.at(i, discretization_->gJBegin() - 1);
   }
+}
 
+void Simulation::applyLeftBoundaryF() {
+  FieldVariable &f = discretization_->f();
+  const FieldVariable &u = discretization_->u();
+
+  // We start and end in the indices of the ghost cells to
+  // prioritize the left-right boundary conditions over the corners
   for (int j = discretization_->fJBegin() - 1;
        j <= discretization_->fJEnd() + 1; ++j) {
-
+    // F's boundary condition is derived from the Neumann BC for p:
+    // f(0, j) = u(0, j)
     f.at(discretization_->fIBegin() - 1, j) =
         u.at(discretization_->fIBegin() - 1, j);
+  }
+}
 
+void Simulation::applyRightBoundaryF() {
+  FieldVariable &f = discretization_->f();
+  const FieldVariable &u = discretization_->u();
+
+  // We start and end in the indices of the ghost cells to
+  // prioritize the left-right boundary conditions over the corners
+  for (int j = discretization_->fJBegin() - 1;
+       j <= discretization_->fJEnd() + 1; ++j) {
+    // F's boundary condition is derived from the Neumann BC for p:
+    // f(imax, j) = u(imax, j)
     f.at(discretization_->fIEnd(), j) = u.at(discretization_->fIEnd(), j);
+  }
+}
+
+void Simulation::applyLeftBoundaryG() {
+  FieldVariable &g = discretization_->g();
+  const FieldVariable &v = discretization_->v();
+
+  // We start and end in the indices of the ghost cells to
+  // prioritize the left-right boundary conditions over the corners
+  for (int j = discretization_->gJBegin() - 1;
+       j <= discretization_->gJEnd() + 1; ++j) {
+    // G's boundary condition is derived from the Neumann BC for p:
+    // g(0, j) = v(0, j)
+    g.at(discretization_->gIBegin() - 1, j) =
+        v.at(discretization_->gIBegin() - 1, j);
+  }
+}
+
+void Simulation::applyRightBoundaryG() {
+  FieldVariable &g = discretization_->g();
+  const FieldVariable &v = discretization_->v();
+
+  // We start and end in the indices of the ghost cells to
+  // prioritize the left-right boundary conditions over the corners
+  for (int j = discretization_->gJBegin() - 1;
+       j <= discretization_->gJEnd() + 1; ++j) {
+    // G's boundary condition is derived from the Neumann BC for p:
+    // g(imax + 1, j) = v(imax + 1, j)
+    g.at(discretization_->gIEnd() + 1, j) =
+        v.at(discretization_->gIEnd() + 1, j);
   }
 }
 
