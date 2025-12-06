@@ -41,10 +41,10 @@ public:
   DataExchanger(std::shared_ptr<Partitioning> partitioning);
 
   // exchange variables via MPI with neighbors
-  virtual void exchange(FieldVariable &fieldVar) = 0;
+  virtual void exchange(FieldVariable &fieldVar);
 
   // exchange time step size with main rank
-  virtual double getMaximumTimeStepSize(double &timeStepSize) = 0;
+  virtual double getMinimumTimeStepSize(double &timeStepSize);
 
 private:
   std::shared_ptr<Partitioning> partitioning_;
