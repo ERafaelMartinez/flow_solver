@@ -1,5 +1,5 @@
 #include "settings/settings.h"
-#include "simulation.h"
+#include "simulation/simulation.h"
 #include <cstdlib>
 #include <iostream>
 #include <mpi.h>

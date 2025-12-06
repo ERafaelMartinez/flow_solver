@@ -1,15 +1,16 @@
 #pragma once
 
-#include "communication/exchanger.h"
-#include "discretization/central_differences.h"
-#include "discretization/discretization.h"
-#include "discretization/donor_cell.h"
-#include "output_writer/output_writer.h"
-#include "pressure_solver/gauss_seidel.h"
-#include "pressure_solver/pressure_solver.h"
-#include "pressure_solver/successive_overrelaxation.h"
-#include "settings/settings.h"
-#include "staggered_grid/staggered_grid.h"
+#include "../communication/exchanger.h"
+#include "../discretization/central_differences.h"
+#include "../discretization/discretization.h"
+#include "../discretization/donor_cell.h"
+#include "../output_writer/output_writer.h"
+#include "../pressure_solver/gauss_seidel.h"
+#include "../pressure_solver/pressure_solver.h"
+#include "../pressure_solver/successive_overrelaxation.h"
+#include "../settings/settings.h"
+#include "../staggered_grid/staggered_grid.h"
+#include "boundary_manager.h"
 #include <memory>
 #include <vector>
 
@@ -59,7 +60,8 @@ private:
   std::shared_ptr<DataExchanger> dataExchanger_;
   std::shared_ptr<Discretization> discretization_;
   std::shared_ptr<PressureSolver> pressure_solver_;
-  std::vector< std::unique_ptr<OutputWriter> > writers_;
+  std::shared_ptr<BoundaryManager> boundaryManager_;
+  std::vector<std::unique_ptr<OutputWriter>> writers_;
 
   void initPartitioning_();
 
@@ -70,26 +72,7 @@ private:
 
   void initOutputWriters_();
 
-  // Helper methods for applying boundary conditions
-  // Split by boundary side and velocity component for parallel control
-  void applyTopBoundaryU();
-  void applyBottomBoundaryU();
-  void applyTopBoundaryV();
-  void applyBottomBoundaryV();
-  void applyLeftBoundaryU();
-  void applyRightBoundaryU();
-  void applyLeftBoundaryV();
-  void applyRightBoundaryV();
-
-  // Helper methods for applying boundary conditions to F and G
-  void applyTopBoundaryF();
-  void applyBottomBoundaryF();
-  void applyTopBoundaryG();
-  void applyBottomBoundaryG();
-  void applyLeftBoundaryF();
-  void applyRightBoundaryF();
-  void applyLeftBoundaryG();
-  void applyRightBoundaryG();
+  void initBoundaryManager_();
 
   double time_step_;
   double simulation_time_;
