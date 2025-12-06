@@ -20,8 +20,8 @@ void Partitioning::initialize(std::array<int, 2> nCellsGlobal) {
   // (real squares, close to squares, prime)
 
   // determine the position (indices) of the partition
-  int subdomainColIndex = ownRank / nSubdomainsX;
-  int subdomainRowIndex = ownRank % nSubdomainsX;
+  int subdomainColIndex = ownRank % nSubdomainsX;
+  int subdomainRowIndex = ownRank / nSubdomainsX;
 
   nCellsLocal_[0] = computeSubdomainSizeInAxis(
     nCellsGlobal[0], nSubdomainsX, subdomainColIndex
