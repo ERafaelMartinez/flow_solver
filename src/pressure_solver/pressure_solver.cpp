@@ -11,55 +11,56 @@
 void PressureSolver::solvePressureEquation() {
   int iteration = 0;
   res_ = 1000.0; // Initialize with a large residual
-  #ifndef NDEBUG
-    std::cout << "\tStarting pressure solver..." << std::endl;
-  #endif
+#ifndef NDEBUG
+  std::cout << "\tStarting pressure solver..." << std::endl;
+#endif
 
   setBoundaryConditions();
-  
+
   while (!solutionHasConverged() && iteration < max_iterations_) {
     calcPressureIter();
     setBoundaryConditions();
     calcRes();
     iteration++;
   }
-  #ifndef NDEBUG
-    if (solutionHasConverged()) {
-        std::cout << "\tPressure solver converged in " << iteration << " iterations."<< std::endl;
-    } else {
-        std::cout << "\tPressure solver did not converge in " << max_iterations_ << " iterations. Residual: " << res_ << std::endl;
-    }
-  #endif
+#ifndef NDEBUG
+  if (solutionHasConverged()) {
+    std::cout << "\tPressure solver converged in " << iteration
+              << " iterations." << std::endl;
+  } else {
+    std::cout << "\tPressure solver did not converge in " << max_iterations_
+              << " iterations. Residual: " << res_ << std::endl;
+  }
+#endif
 }
 
-void PressureSolver::calcRes()
-{
-    res_ = 0.0;
+void PressureSolver::calcRes() {
+  res_ = 0.0;
 
-    auto cellSize = discretization_->cellSize();
-    const double dx = cellSize[0];
-    const double dy = cellSize[1];
-    const double idx2 = 1.0 / (dx * dx);
-    const double idy2 = 1.0 / (dy * dy);
+  auto cellSize = discretization_->cellSize();
+  const double dx = cellSize[0];
+  const double dy = cellSize[1];
+  const double idx2 = 1.0 / (dx * dx);
+  const double idy2 = 1.0 / (dy * dy);
 
-    const int Nx = discretization_->gridSize()[0];
-    const int Ny = discretization_->gridSize()[1];
+  const int Nx = discretization_->gridSize()[0];
+  const int Ny = discretization_->gridSize()[1];
 
-    FieldVariable& p = discretization_->p();
-    const FieldVariable& rhs = discretization_->rhs();
+  FieldVariable &p = discretization_->p();
+  const FieldVariable &rhs = discretization_->rhs();
 
-    for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); i++) {
-        for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); j++) {
-            double laplacian = (
-                (p.at(i+1, j) - 2*p.at(i, j) + p.at(i-1, j)) * idx2 +
-                (p.at(i, j+1) - 2*p.at(i, j) + p.at(i, j-1)) * idy2
-            );
-            double diff = laplacian - rhs.at(i, j);
-            res_ += (diff * diff);
-        }
+  for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); i++) {
+    for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd();
+         j++) {
+      double laplacian =
+          ((p.at(i + 1, j) - 2 * p.at(i, j) + p.at(i - 1, j)) * idx2 +
+           (p.at(i, j + 1) - 2 * p.at(i, j) + p.at(i, j - 1)) * idy2);
+      double diff = laplacian - rhs.at(i, j);
+      res_ += (diff * diff);
     }
-    
-    res_ /= (Nx * Ny);
+  }
+
+  res_ /= (Nx * Ny);
 }
 // check for convergence
 bool PressureSolver::solutionHasConverged() {
@@ -70,26 +71,61 @@ bool PressureSolver::solutionHasConverged() {
 
 // Method to apply/set boundary conditions for the pressure field
 void PressureSolver::setBoundaryConditions() {
-  // Derived from the Neumann boundary conditions for pressure:
-  FieldVariable& pressure_field = discretization_->p();
+  if (partitioning_.ownPartitionContainsBottomBoundary()) {
+    setBoundaryConditionsBottom();
+  }
+  if (partitioning_.ownPartitionContainsTopBoundary()) {
+    setBoundaryConditionsTop();
+  }
+  if (partitioning_.ownPartitionContainsLeftBoundary()) {
+    setBoundaryConditionsLeft();
+  }
+  if (partitioning_.ownPartitionContainsRightBoundary()) {
+    setBoundaryConditionsRight();
+  }
+}
 
-  // Top/Bottom boundaries:
+// Apply bottom boundary conditions
+void PressureSolver::setBoundaryConditionsBottom() {
+  FieldVariable &pressure_field = discretization_->p();
+
+  // Bottom boundary: p(i,0) = p(i,1)
   for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); i++) {
-    // Bottom boundary:   p(i,0) = p(i,1)
     pressure_field.at(i, discretization_->pJBegin() - 1) =
         pressure_field.at(i, discretization_->pJBegin());
-    // Top boundary:  p(i,jmax + 1) = p(i,jmax)
+  }
+}
+
+// Apply top boundary conditions
+void PressureSolver::setBoundaryConditionsTop() {
+  FieldVariable &pressure_field = discretization_->p();
+
+  // Top boundary: p(i,jmax + 1) = p(i,jmax)
+  for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd(); i++) {
     pressure_field.at(i, discretization_->pJEnd() + 1) =
         pressure_field.at(i, discretization_->pJEnd());
   }
+}
 
-  // Left/Right boundaries:
+// Apply left boundary conditions
+void PressureSolver::setBoundaryConditionsLeft() {
+  FieldVariable &pressure_field = discretization_->p();
+
+  // Left boundary: p(0,j) = p(1,j)
   for (int j = discretization_->pJBegin() - 1;
        j <= discretization_->pJEnd() + 1; j++) {
-    // Left boundary:   p(0,j) = p(1,j)
     pressure_field.at(discretization_->pIBegin() - 1, j) =
         pressure_field.at(discretization_->pIBegin(), j);
-    // Right boundary:  p(imax + 1,j) = p(imax,j)
+  }
+}
+
+// Apply right boundary conditions
+void PressureSolver::setBoundaryConditionsRight() {
+  FieldVariable &pressure_field = discretization_->p();
+
+  // Right boundary: p(imax + 1,j) = p(imax,j)
+  for (int j = discretization_->pJBegin() - 1;
+       j <= discretization_->pJEnd() + 1; j++) {
     pressure_field.at(discretization_->pIEnd() + 1, j) =
         pressure_field.at(discretization_->pIEnd(), j);
   }

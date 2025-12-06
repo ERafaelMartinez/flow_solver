@@ -92,7 +92,7 @@ void Simulation::initPressureSolver_() {
               << "] Using Gauss Seidel solver!" << std::endl;
 #endif
     pressure_solver_ = std::make_shared<GaussSeidelPressureSolver>(
-        discretization_, settings_->epsilon,
+        discretization_, *partitioning_, settings_->epsilon,
         settings_->maximumNumberOfIterations);
   } else if (settings_->pressureSolver == "SOR") {
 #ifndef NDEBUG
@@ -100,7 +100,7 @@ void Simulation::initPressureSolver_() {
               << std::endl;
 #endif
     pressure_solver_ = std::make_shared<SORPressureSolver>(
-        discretization_, settings_->epsilon,
+        discretization_, *partitioning_, settings_->epsilon,
         settings_->maximumNumberOfIterations, settings_->omega);
   } else {
     throw std::invalid_argument("Unknown pressure solver type");
