@@ -1,9 +1,9 @@
 #pragma once
 
+#include "communication/exchanger.h"
 #include "discretization/central_differences.h"
 #include "discretization/discretization.h"
 #include "discretization/donor_cell.h"
-#include "communication/exchanger.h"
 #include "output_writer/output_writer.h"
 #include "pressure_solver/gauss_seidel.h"
 #include "pressure_solver/pressure_solver.h"
@@ -63,11 +63,23 @@ private:
 
   void initPartitioning_();
 
-  void initDiscretization_(std::array<int, 2> nCells, std::array<double, 2> cellSize);
+  void initDiscretization_(std::array<int, 2> nCells,
+                           std::array<double, 2> cellSize);
 
   void initPressureSolver_();
 
   void initOutputWriters_();
+
+  // Helper methods for applying boundary conditions
+  // Split by boundary side and velocity component for parallel control
+  void applyTopBoundaryU();
+  void applyBottomBoundaryU();
+  void applyTopBoundaryV();
+  void applyBottomBoundaryV();
+  void applyLeftBoundaryU();
+  void applyRightBoundaryU();
+  void applyLeftBoundaryV();
+  void applyRightBoundaryV();
 
   double time_step_;
   double simulation_time_;
