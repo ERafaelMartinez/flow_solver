@@ -20,7 +20,7 @@ public:
   Simulation(Settings *settings);
 
   // Destructor
-  ~Simulation();
+  ~Simulation() = default;
 
   // Compute timestep based on the stability criteria
   // derived from the grid size, reynolds number,

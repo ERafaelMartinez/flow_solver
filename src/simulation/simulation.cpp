@@ -16,21 +16,45 @@ Simulation::Simulation(Settings *settings)
       settings->physicalSize[0] / settings->nCells[0],
       settings->physicalSize[1] / settings->nCells[1]};
 
-  // Initialize domain partitioning
+#ifndef NDEBUG
+  std::cout << "Initializing partitioning..." << std::endl;
+#endif
+  // Create and initialize domain partitioning
+  partitioning_ = std::make_shared<Partitioning>();
   partitioning_->initialize(settings->nCells);
 
+#ifndef NDEBUG
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] Initializing data exchanger..." << std::endl;
+#endif
   // Initialize data exchanger
   dataExchanger_ = std::make_shared<DataExchanger>(partitioning_);
 
+#ifndef NDEBUG
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] Initializing discretization..." << std::endl;
+#endif
   // Initialize discretizations based on partitioning
   initDiscretization_(partitioning_->nCellsLocal(), cellSize);
 
+#ifndef NDEBUG
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] Initializing pressure solver..." << std::endl;
+#endif
   // Initialize pressure solver based on settings
   initPressureSolver_();
 
+#ifndef NDEBUG
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] Initializing boundary manager..." << std::endl;
+#endif
   // Initialize boundary manager
   initBoundaryManager_();
 
+#ifndef NDEBUG
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] Initializing output writers..." << std::endl;
+#endif
   // Initialize output writers
   initOutputWriters_();
 }
@@ -40,13 +64,15 @@ void Simulation::initDiscretization_(std::array<int, 2> nCells,
                                      std::array<double, 2> cellSize) {
   if (settings_->useDonorCell) {
 #ifndef NDEBUG
-    std::cout << "Using donor cells!" << std::endl;
+    std::cout << "[" << partitioning_->ownRankNo() << "] Using donor cells!"
+              << std::endl;
 #endif
     discretization_ =
         std::make_shared<DonorCell>(nCells, cellSize, settings_->alpha);
   } else {
 #ifndef NDEBUG
-    std::cout << "Using central differences!" << std::endl;
+    std::cout << "[" << partitioning_->ownRankNo()
+              << "] Using central differences!" << std::endl;
 #endif
     discretization_ = std::make_shared<CentralDifferences>(nCells, cellSize);
   }
@@ -62,14 +88,16 @@ void Simulation::initDiscretization_(std::array<int, 2> nCells,
 void Simulation::initPressureSolver_() {
   if (settings_->pressureSolver == "GaussSeidel") {
 #ifndef NDEBUG
-    std::cout << "Using Gauss Seidel solver!" << std::endl;
+    std::cout << "[" << partitioning_->ownRankNo()
+              << "] Using Gauss Seidel solver!" << std::endl;
 #endif
     pressure_solver_ = std::make_shared<GaussSeidelPressureSolver>(
         discretization_, settings_->epsilon,
         settings_->maximumNumberOfIterations);
   } else if (settings_->pressureSolver == "SOR") {
 #ifndef NDEBUG
-    std::cout << "Using SOR solver!" << std::endl;
+    std::cout << "[" << partitioning_->ownRankNo() << "] Using SOR solver!"
+              << std::endl;
 #endif
     pressure_solver_ = std::make_shared<SORPressureSolver>(
         discretization_, settings_->epsilon,
@@ -99,12 +127,6 @@ void Simulation::initBoundaryManager_() {
       discretization_, partitioning_, settings_);
 }
 
-// Destructor. Cleans up allocated resources.
-Simulation::~Simulation() {
-  // delete discretization_.get
-  // delete pressure_solver_;
-}
-
 // Compute timestep based on the stability criteria
 // derived from the grid size, reynolds number,
 // and maximum velocities
@@ -122,7 +144,8 @@ double Simulation::computeNextTimeStepSize() {
   double v_max = discretization_->v().maxMagnitude();
 
 #ifndef NDEBUG
-  std::cout << "\t u_max, v_max = " << u_max << ", " << v_max << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] \t u_max, v_max = " << u_max << ", " << v_max << std::endl;
 #endif
 
   double conv_dt_u = dx / std::abs(u_max);
@@ -134,7 +157,8 @@ double Simulation::computeNextTimeStepSize() {
 
 // limit the maximum timestep size using the settings
 #ifndef NDEBUG
-  std::cout << "\t Computed dt: " << std::min(dt, settings_->maximumDt)
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] \t Computed dt: " << std::min(dt, settings_->maximumDt)
             << std::endl;
 #endif
 
@@ -178,7 +202,8 @@ void Simulation::computeIntermediateVelocities() {
   FieldVariable &G = discretization_->g();
 
 #ifndef NDEBUG
-  std::cout << "\t\t Computing F..." << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo() << "] \t\t Computing F..."
+            << std::endl;
 #endif
 
   for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
@@ -196,7 +221,8 @@ void Simulation::computeIntermediateVelocities() {
   }
 
 #ifndef NDEBUG
-  std::cout << "\t\t Computing G..." << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo() << "] \t\t Computing G..."
+            << std::endl;
 #endif
   for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
     for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd();
@@ -248,7 +274,7 @@ void Simulation::computeVelocities() {
 // Output the current state of the simulation
 // using the OutputWritter class
 void Simulation::outputSimulationState(double outputIndex) {
-  for (std::vector< std::unique_ptr<OutputWriter> >::size_type i = 0;
+  for (std::vector<std::unique_ptr<OutputWriter>>::size_type i = 0;
        i < writers_.size(); i++) {
     writers_[i]->writeFile(outputIndex);
   }
@@ -258,56 +284,78 @@ void Simulation::outputSimulationState(double outputIndex) {
 void Simulation::runTimestep() {
 // 0. Apply/set boundary conditions for velocity field
 #ifndef NDEBUG
-  std::cout << "\tSetting velocity boundaries..." << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] \tSetting velocity boundaries..." << std::endl;
 #endif
   boundaryManager_->setBoundaryConditionsVelocity();
 
 // 1.1 Compute next time step size based on the values of
 // the current velocity field and the stability criteria
 #ifndef NDEBUG
-  std::cout << "\tComputing timestep..." << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo() << "] \tComputing timestep..."
+            << std::endl;
 #endif
   time_step_ = computeNextTimeStepSize();
 // 1.2 obtain maximum time step size from main rank
 #ifndef NDEBUG
-  std::cout << "\tExchanging timestep..." << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo() << "] \tExchanging timestep..."
+            << std::endl;
 #endif
   time_step_ = dataExchanger_->getMinimumTimeStepSize(time_step_);
   simulation_time_ += time_step_;
 
-// 3. Compute intermediate velocities F, G
+// 2.1 Compute intermediate velocities F, G
 #ifndef NDEBUG
-  std::cout << "\tComputing intermediate velocity field" << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] \tComputing intermediate velocity field" << std::endl;
 #endif
   computeIntermediateVelocities();
-
-// 2. Enforce boundary conditions for F and G
+// 2.2 Enforce boundary conditions for F and G
 #ifndef NDEBUG
-  std::cout << "\tSetting boundaries for F and G..." << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] \tSetting boundaries for F and G..." << std::endl;
 #endif
   boundaryManager_->setBoundaryConditionsFG();
+// 2.3 Exchange F and G with neighbors: not required
 
-// 4. Compute RHS for pressure poisson equation
+// 3.1 Compute RHS for pressure poisson equation
 #ifndef NDEBUG
-  std::cout << "\tComputing rhs..." << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo() << "] \tComputing rhs..."
+            << std::endl;
 #endif
   computeRHS();
+// 3.2 Exchange RHS with neighbors: not required
 
-// 5. Solve pressure equation
+// 4. Solve pressure equation
 #ifndef NDEBUG
-  std::cout << "\tSolving pressure equation..." << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] \tSolving pressure equation..." << std::endl;
 #endif
   solvePressureEquation();
 
-// 6. Compute velocities based on new pressure field
+// 5. Compute velocities based on new pressure field
 #ifndef NDEBUG
-  std::cout << "\tComputing velocities..." << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] \tComputing velocities..." << std::endl;
 #endif
   computeVelocities();
 
+// 6. Exchange velocity field with neighbors
+#ifndef NDEBUG
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] \tExchanging horizontal velocities..." << std::endl;
+#endif
+  dataExchanger_->exchange(discretization_->u());
+#ifndef NDEBUG
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] \tExchanging vertical velocities..." << std::endl;
+#endif
+  dataExchanger_->exchange(discretization_->v());
+
 // 7. Output current state of the simulation
 #ifndef NDEBUG
-  std::cout << "\tWriting simulation at " << simulation_time_ << std::endl;
+  std::cout << "[" << partitioning_->ownRankNo() << "] \tWriting simulation at "
+            << simulation_time_ << std::endl;
 #endif
   outputSimulationState(simulation_time_);
 }
@@ -317,8 +365,10 @@ void Simulation::run() {
   int stepNumber = 0;
   while (simulation_time_ < settings_->endTime) {
 #ifndef NDEBUG
-    std::cout << "Simulation step " << stepNumber << ":" << std::endl;
-    std::cout << "\t Current simulation time: " << simulation_time_
+    std::cout << "[" << partitioning_->ownRankNo() << "] Simulation step "
+              << stepNumber << ":" << std::endl;
+    std::cout << "[" << partitioning_->ownRankNo()
+              << "] \t Current simulation time: " << simulation_time_
               << std::endl;
 #endif
     runTimestep();

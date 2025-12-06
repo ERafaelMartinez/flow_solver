@@ -16,7 +16,7 @@ run-serial: clean_out
 	cd $(BUILD_DIR) && mpiexec -n 1 ./numsim ../parameters/parameters.txt
 
 run-serial-3: clean_out
-	cd $(BUILD_DIR) && mpiexec -n 2 ./numsim ../parameters/parameters-3.txt
+	cd $(BUILD_DIR) && mpiexec -n 1 ./numsim ../parameters/parameters-3.txt
 
 run-parallel: clean_out
 	cd $(BUILD_DIR) && mpiexec -n 2 ./numsim ../parameters/parameters.txt
