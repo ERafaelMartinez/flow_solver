@@ -24,22 +24,6 @@ void PressureSolver::solvePressureEquation() {
 
     setBoundaryConditions();
     calcRes();
-
-#ifndef NDEBUG
-    std::cout << "[" << partitioning_->ownRankNo() << "]"
-              << "\tres_ before exchange: "
-              << res_
-              << std::endl;
-#endif
-        res_ = dataExchanger_->getResidual(res_);
-
-#ifndef NDEBUG
-    std::cout << "[" << partitioning_->ownRankNo() << "]"
-              << "\tres_ after exchange: "
-              << res_
-              << std::endl;
-#endif
-
     iteration++;
   }
 #ifndef NDEBUG
