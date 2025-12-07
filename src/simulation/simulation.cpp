@@ -145,15 +145,17 @@ double Simulation::computeNextTimeStepSize() {
 
   // exchange maximum (full domain) velocity with main rank
   std::array<double, 2> maxVelocity = {u_max, v_max};
-  dataExchanger_->getMaximumVelocity(maxVelocity);
+  std::array<double, 2> globalMaxVelocity;
+  globalMaxVelocity = dataExchanger_->getMaximumVelocity(maxVelocity);
 
 #ifndef NDEBUG
   std::cout << "[" << partitioning_->ownRankNo()
-            << "] \t u_max, v_max = " << maxVelocity[0] << ", " << maxVelocity[1] << std::endl;
+            << "] \t u_max, v_max = " << globalMaxVelocity[0] 
+            << ", " << globalMaxVelocity[1] << std::endl;
 #endif
 
-  double conv_dt_u = dx / std::abs(maxVelocity[0]);
-  double conv_dt_v = dy / std::abs(maxVelocity[1]);
+  double conv_dt_u = dx / std::abs(globalMaxVelocity[0]);
+  double conv_dt_v = dy / std::abs(globalMaxVelocity[1]);
   double conv_dt = std::min(conv_dt_u, conv_dt_v);
 
   // take the smallest physics-induced dt and scale with safety factor
@@ -300,6 +302,7 @@ void Simulation::runTimestep() {
             << std::endl;
 #endif
   time_step_ = computeNextTimeStepSize();
+  simulation_time_ += time_step_;
 
 // 2.1 Compute intermediate velocities F, G
 #ifndef NDEBUG
