@@ -61,13 +61,13 @@ void DataExchanger::packDataBuffers_(
         break;
       case 2:
         dataBuffers[i]->update(
-            // top internal-boundary row index is size[1] - 2
-            fieldVar.getRowValues(fieldVar.size()[1] - 2, columnRange));
+            // bottom internal-boundary row index is 1
+            fieldVar.getRowValues(1, columnRange));
         break;
       case 3:
         dataBuffers[i]->update(
-            // bottom internal-boundary row index is 1
-            fieldVar.getRowValues(1, columnRange));
+            // top internal-boundary row index is size[1] - 2
+            fieldVar.getRowValues(fieldVar.size()[1] - 2, columnRange));
         break;
       }
     }
@@ -99,13 +99,13 @@ void DataExchanger::unpackDataBuffers_(
         break;
       case 2:
         fieldVar.setRowValues(
-            // top ghost-row index is size[1] - 1
-            fieldVar.size()[1] - 1, columnRange, dataBuffers[i]->asArray());
+            // bottom ghost-row index is 0
+            0, columnRange, dataBuffers[i]->asArray());
         break;
       case 3:
         fieldVar.setRowValues(
-            // bottom ghost-row index is 0
-            0, columnRange, dataBuffers[i]->asArray());
+            // top ghost-row index is size[1] - 1
+            fieldVar.size()[1] - 1, columnRange, dataBuffers[i]->asArray());
         break;
       }
     }
@@ -203,7 +203,8 @@ DataExchanger::getMaximumVelocity(std::array<double, 2> &velocity) {
   std::array<double, 2> localVelocity = velocity;
   std::array<double, 2> maxVelocity = {0, 0};
 
-  // obtain the maximum velocity {maxU, maxV} from all ranks using MPI_Reduce - MAX
+  // obtain the maximum velocity {maxU, maxV} from all ranks using MPI_Reduce -
+  // MAX
   MPI_Reduce(&localVelocity, &maxVelocity, 2, MPI_DOUBLE, MPI_MAX, 0,
              MPI_COMM_WORLD);
 
