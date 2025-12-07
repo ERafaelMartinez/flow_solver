@@ -2,7 +2,6 @@
 #include "../partitioning/partitioning.h"
 #include "../staggered_grid/staggered_grid.h"
 #include "../storage/field_variable.h"
-#include <algorithm>
 #include <array>
 #include <iostream>
 #include <numeric>
@@ -189,48 +188,26 @@ double DataExchanger::getResidual(double res) {
   double localResidual = res;
   double globalResidual = 0;
 
-  // Gather all partial averages down to the root process
-  std::vector<double> gatheredResiduals;
-  if (partitioning_->ownRankNo() == 0) {
-    gatheredResiduals.resize(partitioning_->nRanks());
-  }
+  // obtain the total residual from all ranks using MPI_Reduce - SUM
+  MPI_REDUCE(&localResidual, &globalResidual, 1, MPI_DOUBLE, MPI_SUM, 0,
+             MPI_COMM_WORLD);
 
-  MPI_Gather(&localResidual, 1, MPI_DOUBLE, gatheredResiduals.data(),
-             partitioning_->nRanks(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-// Printing elements of vector
-#ifndef NDEBUG
-  std::cout << "[" << partitioning_->ownRankNo() << "]"
-            << "\tlocalRes: " << localResidual << "\tgathered: " << std::endl;
-
-  std::cout << "\t";
-  for (auto i : gatheredResiduals) {
-    std::cout << i << ", ";
-  }
-  std::cout << std::endl;
-#endif
-
-  if (partitioning_->ownRankNo() == 0) {
-    // sum up all resudiauls
-    globalResidual =
-        std::accumulate(gatheredResiduals.begin(), gatheredResiduals.end(), 0);
-  }
-
-  // communicate maximum time step size to all ranks
+  // communicate total residual to all ranks / obtain it on each rank
   MPI_Bcast(&globalResidual, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   return globalResidual;
 }
 
-std::array<double, 2> DataExchanger::getMaximumVelocity(std::array<double, 2> &velocity) {
+std::array<double, 2>
+DataExchanger::getMaximumVelocity(std::array<double, 2> &velocity) {
   std::array<double, 2> localVelocity = velocity;
   std::array<double, 2> maxVelocity = {0, 0};
 
-  // obtain the maximum velocity {maxU, maxV} from all ranks using MPI_Reduce
-  MPI_REDUCE(
-    &localVelocity, &maxVelocity, 2, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  
-  // communicate maximum velocity to all ranks / obtain it on all ranks
+  // obtain the maximum velocity {maxU, maxV} from all ranks using MPI_Reduce - MAX
+  MPI_REDUCE(&localVelocity, &maxVelocity, 2, MPI_DOUBLE, MPI_MAX, 0,
+             MPI_COMM_WORLD);
+
+  // communicate maximum velocity to all ranks / obtain it on each rank
   MPI_Bcast(&maxVelocity, 2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   return maxVelocity;

@@ -44,9 +44,9 @@ public:
   void exchange(FieldVariable &fieldVar);
   
   // obtain the maximum velocity {maxU, maxV} from all ranks
-  double getMaximumVelocity(std::array<double, 2> &maxVelocity);
+  std::array<double, 2> getMaximumVelocity(std::array<double, 2> &maxVelocity);
 
-  // obtain the maximum residual from all ranks
+  // obtain the total residual from all ranks
   double getResidual(double res);
 
 private:
