@@ -46,6 +46,9 @@ public:
   // exchange time step size with main rank
   double getMinimumTimeStepSize(double &timeStepSize);
 
+  // exchange time step size with main rank
+  double getResidual(double res);
+
 private:
   std::shared_ptr<Partitioning> partitioning_;
   std::array<int, 4> neighborsRank_;

@@ -1,5 +1,6 @@
 #include "pressure_solver.h"
 #include <iostream>
+#include <ostream>
 
 /* This file implements the PressureSolver class, which is a specific
    implementation of the PressureSolver interface using the Gauss-Seidel
@@ -20,8 +21,25 @@ void PressureSolver::solvePressureEquation() {
   while (!solutionHasConverged() && iteration < max_iterations_) {
     calcPressureIter();
     dataExchanger_->exchange(discretization_->p());
+
     setBoundaryConditions();
     calcRes();
+
+#ifndef NDEBUG
+    std::cout << "[" << partitioning_->ownRankNo() << "]"
+              << "\tres_ before exchange: "
+              << res_
+              << std::endl;
+#endif
+        res_ = dataExchanger_->getResidual(res_);
+
+#ifndef NDEBUG
+    std::cout << "[" << partitioning_->ownRankNo() << "]"
+              << "\tres_ after exchange: "
+              << res_
+              << std::endl;
+#endif
+
     iteration++;
   }
 #ifndef NDEBUG
@@ -63,6 +81,7 @@ void PressureSolver::calcRes() {
 
   res_ /= (Nx * Ny);
 }
+
 // check for convergence
 bool PressureSolver::solutionHasConverged() {
   // Assuming the res_ measure has been updated during the

@@ -3,6 +3,9 @@
 #include "../staggered_grid/staggered_grid.h"
 #include "../storage/field_variable.h"
 #include <array>
+#include <iostream>
+#include <numeric>
+#include <vector>
 
 DataExchanger::DataExchanger(std::shared_ptr<Partitioning> partitioning) {
   partitioning_ = partitioning;
@@ -188,6 +191,44 @@ void DataExchanger::exchange(FieldVariable &fieldVar) {
   unpackDataBuffers_(receiveBuffers, fieldVar);
 }
 
+double DataExchanger::getResidual(double res) {
+
+  double localResidual = res;
+  double globalResidual = 0;
+
+  // Gather all partial averages down to the root process
+  std::vector<double> gatheredResiduals;
+  if (partitioning_->ownRankNo() == 0) {
+    gatheredResiduals.resize(partitioning_->nRanks());
+  }
+
+  MPI_Gather(&localResidual, 1, MPI_DOUBLE, gatheredResiduals.data(),
+             partitioning_->nRanks(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+// Printing elements of vector
+#ifndef NDEBUG
+  std::cout << "[" << partitioning_->ownRankNo() << "]"
+            << "\tlocalRes: " << localResidual << "\tgathered: " << std::endl;
+
+  std::cout << "\t";
+  for (auto i : gatheredResiduals) {
+    std::cout << i << ", ";
+  }
+  std::cout << std::endl;
+#endif
+
+  if (partitioning_->ownRankNo() == 0) {
+    // sum up all resudiauls
+    globalResidual =
+        std::accumulate(gatheredResiduals.begin(), gatheredResiduals.end(), 0);
+  }
+
+  // communicate maximum time step size to all ranks
+  MPI_Bcast(&globalResidual, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+  return globalResidual;
+}
+
 double DataExchanger::getMinimumTimeStepSize(double &timeStepSize) {
   // clear request pools
   sendRequests_.clear();
@@ -243,5 +284,4 @@ double DataExchanger::getMinimumTimeStepSize(double &timeStepSize) {
     MPI_Bcast(&minTimeStepSize, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     return minTimeStepSize;
   }
-
 }
