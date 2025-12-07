@@ -65,7 +65,9 @@ double FieldVariable::maxMagnitude() {
 }
 
 // row/column getters - extract boundary data for MPI communication
-std::vector<double> FieldVariable::getColumnValues(int columnIndex, std::array<int, 2> rowRange) const {
+std::vector<double>
+FieldVariable::getColumnValues(int columnIndex,
+                               std::array<int, 2> rowRange) const {
   std::vector<double> columnValues;
   columnValues.reserve(_size[1]);
   for (int j = rowRange[0]; j < rowRange[1]; ++j) {
@@ -74,7 +76,9 @@ std::vector<double> FieldVariable::getColumnValues(int columnIndex, std::array<i
   return columnValues;
 }
 
-std::vector<double> FieldVariable::getRowValues(int rowIndex, std::array<int, 2> columnRange) const {
+std::vector<double>
+FieldVariable::getRowValues(int rowIndex,
+                            std::array<int, 2> columnRange) const {
   std::vector<double> rowValues;
   rowValues.reserve(_size[0]);
   for (int i = columnRange[0]; i < columnRange[1]; ++i) {
@@ -84,25 +88,27 @@ std::vector<double> FieldVariable::getRowValues(int rowIndex, std::array<int, 2>
 }
 
 // Boundary setters - update boundary data after MPI communication
-void FieldVariable::setColumnValues(int columnIndex, std::array<int, 2> rowRange, const std::vector<double> &columnValues) {
+void FieldVariable::setColumnValues(int columnIndex,
+                                    std::array<int, 2> rowRange,
+                                    const std::vector<double> &columnValues) {
   // assert that the number of values matches the number of rows
   assert(columnValues.size() == rowRange[1] - rowRange[0]);
   // assert that the row range is valid
   assert(rowRange[0] >= 0 && rowRange[1] <= _size[1]);
 
   for (int j = rowRange[0]; j < rowRange[1]; ++j) {
-    at(columnIndex, j) = columnValues[j];
+    at(columnIndex, j) = columnValues[j - rowRange[0]];
   }
 }
 
-void FieldVariable::setRowValues(int rowIndex, std::array<int, 2> columnRange, const std::vector<double> &rowValues) {
+void FieldVariable::setRowValues(int rowIndex, std::array<int, 2> columnRange,
+                                 const std::vector<double> &rowValues) {
   // assert that the number of values matches the number of columns
   assert(rowValues.size() == columnRange[1] - columnRange[0]);
   // assert that the column range is valid
   assert(columnRange[0] >= 0 && columnRange[1] <= _size[0]);
 
   for (int i = columnRange[0]; i < columnRange[1]; ++i) {
-    at(i, rowIndex) = rowValues[i];
+    at(i, rowIndex) = rowValues[i - columnRange[0]];
   }
 }
-

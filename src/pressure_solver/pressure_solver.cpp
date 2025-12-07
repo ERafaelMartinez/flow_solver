@@ -21,7 +21,6 @@ void PressureSolver::solvePressureEquation() {
   while (!solutionHasConverged() && iteration < max_iterations_) {
     calcPressureIter();
     dataExchanger_->exchange(discretization_->p());
-
     setBoundaryConditions();
     calcRes();
     iteration++;

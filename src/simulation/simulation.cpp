@@ -280,7 +280,7 @@ void Simulation::computeVelocities() {
 // Output the current state of the simulation
 // using the OutputWritter class
 void Simulation::outputSimulationState(double outputIndex) {
-  for (std::vector<std::unique_ptr<OutputWriter>>::size_type i = 0;
+  for (std::vector< std::unique_ptr<OutputWriter> >::size_type i = 0;
        i < writers_.size(); i++) {
     writers_[i]->writeFile(outputIndex);
   }
