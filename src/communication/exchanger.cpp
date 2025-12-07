@@ -229,17 +229,17 @@ double DataExchanger::getResidual(double res) {
   return globalResidual;
 }
 
+// BUG: This will probably not work as we want
 double DataExchanger::getMinimumTimeStepSize(double &timeStepSize) {
   // clear request pools
   sendRequests_.clear();
   receiveRequests_.clear();
 
+  // TODO: Actually we just want to call MPI_GATHER here
   // all non-main ranks send their time step size to the main rank
   if (partitioning_->ownRankNo() != 0) {
     MPI_Request sendRequest;
-    MPI_Isend(
-      &timeStepSize, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &sendRequest
-    );
+    MPI_Isend(&timeStepSize, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &sendRequest);
     sendRequests_.push_back(sendRequest);
   }
 
@@ -253,17 +253,12 @@ double DataExchanger::getMinimumTimeStepSize(double &timeStepSize) {
     // create receive requests one per non-main rank
     receiveRequests_.resize(partitioning_->nRanks() - 1, MPI_Request());
     for (int i = 1; i < partitioning_->nRanks(); ++i) {
-      MPI_Irecv(
-        &receiveBuffers[i - 1],
-        1,
-        MPI_DOUBLE, i, 0, MPI_COMM_WORLD,
-        &receiveRequests_[i - 1]
-      );
+      MPI_Irecv(&receiveBuffers[i - 1], 1, MPI_DOUBLE, i, 0, MPI_COMM_WORLD,
+                &receiveRequests_[i - 1]);
     }
     // wait for all receives to finish
-    MPI_Waitall(
-      receiveRequests_.size(), receiveRequests_.data(), MPI_STATUSES_IGNORE
-    );
+    MPI_Waitall(receiveRequests_.size(), receiveRequests_.data(),
+                MPI_STATUSES_IGNORE);
     // extract maximum time step size from the buffers into the time step size
     double minTimeStepSize = timeStepSize;
     for (int i = 1; i < partitioning_->nRanks(); ++i) {
@@ -272,10 +267,11 @@ double DataExchanger::getMinimumTimeStepSize(double &timeStepSize) {
 
     // communicate maximum time step size to all ranks
     MPI_Bcast(&minTimeStepSize, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // TODO: Why are we doing this?
     // wait for broadcast to finish
-    MPI_Waitall(
-      receiveRequests_.size(), receiveRequests_.data(), MPI_STATUSES_IGNORE
-    );
+    MPI_Waitall(receiveRequests_.size(), receiveRequests_.data(),
+                MPI_STATUSES_IGNORE);
 
     return minTimeStepSize;
   } else {
