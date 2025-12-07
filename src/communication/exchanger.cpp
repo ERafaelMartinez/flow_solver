@@ -189,7 +189,7 @@ double DataExchanger::getResidual(double res) {
   double globalResidual = 0;
 
   // obtain the total residual from all ranks using MPI_Reduce - SUM
-  MPI_REDUCE(&localResidual, &globalResidual, 1, MPI_DOUBLE, MPI_SUM, 0,
+  MPI_Reduce(&localResidual, &globalResidual, 1, MPI_DOUBLE, MPI_SUM, 0,
              MPI_COMM_WORLD);
 
   // communicate total residual to all ranks / obtain it on each rank
@@ -204,7 +204,7 @@ DataExchanger::getMaximumVelocity(std::array<double, 2> &velocity) {
   std::array<double, 2> maxVelocity = {0, 0};
 
   // obtain the maximum velocity {maxU, maxV} from all ranks using MPI_Reduce - MAX
-  MPI_REDUCE(&localVelocity, &maxVelocity, 2, MPI_DOUBLE, MPI_MAX, 0,
+  MPI_Reduce(&localVelocity, &maxVelocity, 2, MPI_DOUBLE, MPI_MAX, 0,
              MPI_COMM_WORLD);
 
   // communicate maximum velocity to all ranks / obtain it on each rank

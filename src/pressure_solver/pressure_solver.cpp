@@ -54,7 +54,7 @@ void PressureSolver::solvePressureEquation() {
 }
 
 void PressureSolver::calcRes() {
-  res_ = 0.0;
+  double localResidual = 0.0;
 
   auto cellSize = discretization_->cellSize();
   const double dx = cellSize[0];
@@ -75,11 +75,14 @@ void PressureSolver::calcRes() {
           ((p.at(i + 1, j) - 2 * p.at(i, j) + p.at(i - 1, j)) * idx2 +
            (p.at(i, j + 1) - 2 * p.at(i, j) + p.at(i, j - 1)) * idy2);
       double diff = laplacian - rhs.at(i, j);
-      res_ += (diff * diff);
+      localResidual += (diff * diff);
     }
   }
 
-  res_ /= (Nx * Ny);
+  localResidual /= (Nx * Ny);
+
+  // obtain total residual from all ranks
+  res_ = dataExchanger_->getResidual(localResidual);
 }
 
 // check for convergence
