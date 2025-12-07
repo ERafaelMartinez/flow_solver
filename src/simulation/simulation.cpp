@@ -143,13 +143,17 @@ double Simulation::computeNextTimeStepSize() {
   double u_max = discretization_->u().maxMagnitude();
   double v_max = discretization_->v().maxMagnitude();
 
+  // exchange maximum (full domain) velocity with main rank
+  std::array<double, 2> maxVelocity = {u_max, v_max};
+  dataExchanger_->getMaximumVelocity(maxVelocity);
+
 #ifndef NDEBUG
   std::cout << "[" << partitioning_->ownRankNo()
-            << "] \t u_max, v_max = " << u_max << ", " << v_max << std::endl;
+            << "] \t u_max, v_max = " << maxVelocity[0] << ", " << maxVelocity[1] << std::endl;
 #endif
 
-  double conv_dt_u = dx / std::abs(u_max);
-  double conv_dt_v = dy / std::abs(v_max);
+  double conv_dt_u = dx / std::abs(maxVelocity[0]);
+  double conv_dt_v = dy / std::abs(maxVelocity[1]);
   double conv_dt = std::min(conv_dt_u, conv_dt_v);
 
   // take the smallest physics-induced dt and scale with safety factor
@@ -296,13 +300,6 @@ void Simulation::runTimestep() {
             << std::endl;
 #endif
   time_step_ = computeNextTimeStepSize();
-// 1.2 obtain maximum time step size from main rank
-#ifndef NDEBUG
-  std::cout << "[" << partitioning_->ownRankNo() << "] \tExchanging timestep..."
-            << std::endl;
-#endif
-  time_step_ = dataExchanger_->getMinimumTimeStepSize(time_step_);
-  simulation_time_ += time_step_;
 
 // 2.1 Compute intermediate velocities F, G
 #ifndef NDEBUG

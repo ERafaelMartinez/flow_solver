@@ -43,10 +43,10 @@ public:
   // exchange variables via MPI with neighbors
   void exchange(FieldVariable &fieldVar);
   
-  // exchange time step size with main rank
-  double getMinimumTimeStepSize(double &timeStepSize);
+  // obtain the maximum velocity {maxU, maxV} from all ranks
+  double getMaximumVelocity(std::array<double, 2> &maxVelocity);
 
-  // exchange time step size with main rank
+  // obtain the maximum residual from all ranks
   double getResidual(double res);
 
 private:
