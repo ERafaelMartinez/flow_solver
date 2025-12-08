@@ -7,7 +7,7 @@
 #include "../output_writer/output_writer.h"
 #include "../pressure_solver/gauss_seidel.h"
 #include "../pressure_solver/pressure_solver.h"
-#include "../pressure_solver/successive_overrelaxation.h"
+#include "../pressure_solver/red_black_sor.h"
 #include "../settings/settings.h"
 #include "../staggered_grid/staggered_grid.h"
 #include "boundary_manager.h"
