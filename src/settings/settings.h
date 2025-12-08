@@ -15,7 +15,7 @@ struct Settings
     double tau = 0.5;       //< safety factor for time step width
     double maximumDt = 0.1; //< maximum time step width
 
-    std::array<double, 2> g{0., 0.}; //< external forces
+    std::array<double, 2> g = {0., 0.}; //< external forces
 
     bool useDonorCell = false; //< if the donor cell scheme schould be used
     double alpha = 0.5;        //< factor for donor-cell scheme

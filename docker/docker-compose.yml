@@ -12,6 +12,10 @@ services:
     working_dir: /workspace
     stdin_open: true
     tty: true
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
     environment:
       - VTK_DIR=/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1
 

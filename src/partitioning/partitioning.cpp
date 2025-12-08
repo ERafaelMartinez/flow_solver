@@ -2,7 +2,6 @@
 #include <array>
 #include <cmath>
 #include <iostream>
-#include <limits>
 #include <mpi.h>
 #include <numeric>
 #include <ostream>
@@ -41,8 +40,8 @@ void Partitioning::initialize(std::array<int, 2> nCellsGlobal) {
   // (real squares, close to squares, prime)
 
   // determine the position (indices) of the partition
-  int subdomainColIndex = ownRank / nSubdomainsY;
-  int subdomainRowIndex = ownRank % nSubdomainsY;
+  int subdomainColIndex = ownRank % nSubdomainsX;
+  int subdomainRowIndex = ownRank / nSubdomainsX;
 
   nCellsLocal_[0] = computeSubdomainSizeInAxis(nCellsGlobal[0], nSubdomainsX,
                                                subdomainColIndex);
@@ -66,6 +65,14 @@ void Partitioning::initialize(std::array<int, 2> nCellsGlobal) {
                                   nSubdomainsX, nSubdomainsY);
   neighbourTop_ = getProcessAt(subdomainColIndex, subdomainRowIndex + 1,
                                nSubdomainsX, nSubdomainsY);
+
+#ifndef NDEBUG
+  std::cout << "Own rank: " << ownRank << "\n";
+  std::cout << "\t Top: " << neighbourTop_ << "\n";
+  std::cout << "\t Bottom: " << neighbourBottom_ << "\n";
+  std::cout << "\t Left: " << neighbourLeft_ << "\n";
+  std::cout << "\t Right: " << neighbourRight_ << "\n";
+#endif
 }
 
 int Partitioning::getProcessAt(int i, int j, int numOfColumns,
@@ -74,7 +81,7 @@ int Partitioning::getProcessAt(int i, int j, int numOfColumns,
     return -1;
   }
 
-  return i * numOfColumns + j;
+  return i + j * numOfColumns;
 }
 
 int Partitioning::computeSubdomainSizeInAxis(int globalCellCountInAxis,

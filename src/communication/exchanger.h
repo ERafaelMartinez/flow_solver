@@ -41,7 +41,13 @@ public:
   DataExchanger(std::shared_ptr<Partitioning> partitioning);
 
   // exchange variables via MPI with neighbors
-  virtual void exchange(FieldVariable &fieldVar) = 0;
+  void exchange(FieldVariable &fieldVar);
+  
+  // obtain the maximum velocity {maxU, maxV} from all ranks
+  std::array<double, 2> getMaximumVelocity(std::array<double, 2> &maxVelocity);
+
+  // obtain the total residual from all ranks
+  double getResidual(double res);
 
 private:
   std::shared_ptr<Partitioning> partitioning_;
