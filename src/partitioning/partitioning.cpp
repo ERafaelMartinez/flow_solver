@@ -3,6 +3,9 @@
 #include <cmath>
 #include <iostream>
 #include <mpi.h>
+#include <numeric>
+#include <ostream>
+#include <vector>
 
 void Partitioning::initialize(std::array<int, 2> nCellsGlobal) {
   // 1. We want to figure out what our indices are
@@ -15,8 +18,24 @@ void Partitioning::initialize(std::array<int, 2> nCellsGlobal) {
   nCellsGlobal_ = nCellsGlobal;
 
   // determine the number of partitions/subdomains in x and y direction
-  int nSubdomainsX = std::sqrt(processesCount);
-  int nSubdomainsY = std::ceil(processesCount / nSubdomainsX);
+  auto gridSize = divideProcessesInto2DSubdomainGrid(processesCount);
+  int nSubdomainsX;
+  int nSubdomainsY;
+  if (nCellsGlobal[0] > nCellsGlobal[1]) {
+    nSubdomainsX = std::max(gridSize.x, gridSize.y);
+    nSubdomainsY = std::min(gridSize.x, gridSize.y);
+  } else {
+    nSubdomainsX = std::min(gridSize.x, gridSize.y);
+    nSubdomainsY = std::max(gridSize.x, gridSize.y);
+  }
+
+  // TODO: Do we need to switch these around based off the global grid size
+
+#ifndef NDEBUG
+  std::cout << "Partition grid size is " << nSubdomainsX << "x" << nSubdomainsY
+            << std::endl;
+#endif
+
   // TODO: Find a better way that would work with other numbers
   // (real squares, close to squares, prime)
 
@@ -94,6 +113,57 @@ int Partitioning::computeSubdomainAxisOffset(int globalCellCountInAxis,
    */
   int baseSize = globalCellCountInAxis / axisPartitionCount;
   return partitionIndexInAxis * baseSize;
+}
+
+Partitioning::GridSize
+Partitioning::divideProcessesInto2DSubdomainGrid(int processCount) {
+  // If the number is a true square, then we simply use the sqrt for both x and
+  // y dimensions
+  double sqrt = std::sqrt(processCount);
+  if (sqrt - std::floor(sqrt) == 0) {
+    return {static_cast<int>(sqrt), static_cast<int>(sqrt)};
+  }
+
+  // If it is not, and since we know that processCount is going to be always a
+  // multiple of 2 We can try to find all prime divisors to then find the
+  // combination that yields subdomains that are as square as possible (aspect
+  // ratio is 1)
+
+  // Find all prime divisors
+  std::vector<long> factors = {1};
+  long factor = 2;
+  long temp = processCount;
+  while (temp > 1) {
+    if (temp % factor == 0) {
+      factors.push_back(factor);
+      temp /= factor;
+    } else {
+      factor++;
+    }
+  }
+
+  // Do a simple search to find dimensions that yield the smallest aspect ratio
+  // This could be expanded further to really search for all possible
+  // permutations
+  int minX = 1;
+  int minY = 1;
+  double minAspectRatio = std::numeric_limits<double>::max();
+  for (int i = 0; i < factors.size() - 1; i++) {
+    auto yFactorsBeginItr = factors.begin() + i + 1;
+    int x = std::accumulate(factors.begin(), yFactorsBeginItr, 1,
+                            std::multiplies<int>());
+    int y = std::accumulate(yFactorsBeginItr, factors.end(), 1,
+                            std::multiplies<int>());
+
+    double aspectRatio = (double)std::max(x, y) / std::min(x, y);
+    if (aspectRatio < minAspectRatio) {
+      minAspectRatio = aspectRatio;
+      minX = x;
+      minY = y;
+    }
+  }
+
+  return {minX, minY};
 }
 
 //! get the local number of cells in the own subdomain
