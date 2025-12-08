@@ -3,6 +3,9 @@
 #include "../staggered_grid/staggered_grid.h"
 #include "../storage/field_variable.h"
 #include <array>
+#include <iostream>
+#include <numeric>
+#include <vector>
 
 DataExchanger::DataExchanger(std::shared_ptr<Partitioning> partitioning) {
   partitioning_ = partitioning;
@@ -46,29 +49,25 @@ void DataExchanger::packDataBuffers_(
   for (int i = 0; i < 4; ++i) {
     if (neighborsRank_[i] != -1) {
       switch (i) {
-      case 0:
+      case 0:  // left neighbor
         dataBuffers[i]->update(
-          // left internal-boundary column index is 1
-          fieldVar.getColumnValues(1, rowRange)
-        );
+            // left internal-boundary is shared; ghost cell is at index 0
+            fieldVar.getColumnValues(1, rowRange));
         break;
-      case 1:
+      case 1:  // right neighbor
         dataBuffers[i]->update(
-          // right internal-boundary column index is size[0] - 2
-          fieldVar.getColumnValues(fieldVar.size()[0] - 2, rowRange)
-        );
+            // right internal-boundary is shared; ghost cell is at index size[0] - 1
+            fieldVar.getColumnValues(fieldVar.size()[0] - 2, rowRange));
         break;
-      case 2:
+      case 2:  // bottom neighbor
         dataBuffers[i]->update(
-          // top internal-boundary row index is size[1] - 2
-          fieldVar.getRowValues(fieldVar.size()[1] - 2, columnRange)
-        );
+            // bottom internal-boundary is shared; ghost cell is at index 0
+            fieldVar.getRowValues(1, columnRange));
         break;
-      case 3:
+      case 3:  // top neighbor
         dataBuffers[i]->update(
-          // bottom internal-boundary row index is 1
-          fieldVar.getRowValues(1, columnRange)
-        );
+            // top internal-boundary is shared; ghost cell is at index size[1] - 1
+            fieldVar.getRowValues(fieldVar.size()[1] - 2, columnRange));
         break;
       }
     }
@@ -88,29 +87,25 @@ void DataExchanger::unpackDataBuffers_(
   for (int i = 0; i < 4; ++i) {
     if (neighborsRank_[i] != -1) {
       switch (i) {
-      case 0:
+      case 0:  // left neighbor
         fieldVar.setColumnValues(
-          // left ghost-column index is 0
-          0, rowRange, dataBuffers[i]->asArray()
-        );
+            // received data is stored in ghost cell at index 0 (left)
+            0, rowRange, dataBuffers[i]->asArray());
         break;
-      case 1:
+      case 1:  // right neighbor
         fieldVar.setColumnValues(
-          // right ghost-column index is size[0] - 1
-          fieldVar.size()[0] - 1, rowRange, dataBuffers[i]->asArray()
-        );
+            // received data is stored in ghost cell at index size[0] - 1 (right)
+            fieldVar.size()[0] - 1, rowRange, dataBuffers[i]->asArray());
         break;
-      case 2:
+      case 2:  // bottom neighbor
         fieldVar.setRowValues(
-          // top ghost-row index is size[1] - 1
-          fieldVar.size()[1] - 1, columnRange, dataBuffers[i]->asArray()
-        );
+            // received data is stored in ghost cell at index 0 (bottom)
+            0, columnRange, dataBuffers[i]->asArray());
         break;
-      case 3:
+      case 3:  // top neighbor
         fieldVar.setRowValues(
-          // bottom ghost-row index is 0
-          0, columnRange, dataBuffers[i]->asArray()
-        );
+            // received data is stored in ghost cell at index size[1] - 1 (top)
+            fieldVar.size()[1] - 1, columnRange, dataBuffers[i]->asArray());
         break;
       }
     }
@@ -188,60 +183,33 @@ void DataExchanger::exchange(FieldVariable &fieldVar) {
   unpackDataBuffers_(receiveBuffers, fieldVar);
 }
 
-double DataExchanger::getMinimumTimeStepSize(double &timeStepSize) {
-  // clear request pools
-  sendRequests_.clear();
-  receiveRequests_.clear();
+double DataExchanger::getResidual(double res) {
 
-  // all non-main ranks send their time step size to the main rank
-  if (partitioning_->ownRankNo() != 0) {
-    MPI_Request sendRequest;
-    MPI_Isend(
-      &timeStepSize, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, &sendRequest
-    );
-    sendRequests_.push_back(sendRequest);
-  }
+  double localResidual = res;
+  double globalResidual = 0;
 
-  // Then, the main rank receives the time step size from the other ranks
-  // thus we need one receive buffer for each rank with non-main rank
-  if (partitioning_->ownRankNo() == 0) {
-    // create receive buffers one per non-main rank
-    std::vector<double> receiveBuffers;
-    receiveBuffers.resize(partitioning_->nRanks() - 1);
+  // obtain the total residual from all ranks using MPI_Reduce - SUM
+  MPI_Reduce(&localResidual, &globalResidual, 1, MPI_DOUBLE, MPI_SUM, 0,
+             MPI_COMM_WORLD);
 
-    // create receive requests one per non-main rank
-    receiveRequests_.resize(partitioning_->nRanks() - 1, MPI_Request());
-    for (int i = 1; i < partitioning_->nRanks(); ++i) {
-      MPI_Irecv(
-        &receiveBuffers[i - 1],
-        1,
-        MPI_DOUBLE, i, 0, MPI_COMM_WORLD,
-        &receiveRequests_[i - 1]
-      );
-    }
-    // wait for all receives to finish
-    MPI_Waitall(
-      receiveRequests_.size(), receiveRequests_.data(), MPI_STATUSES_IGNORE
-    );
-    // extract maximum time step size from the buffers into the time step size
-    double minTimeStepSize = timeStepSize;
-    for (int i = 1; i < partitioning_->nRanks(); ++i) {
-      minTimeStepSize = std::min(minTimeStepSize, receiveBuffers[i]);
-    }
+  // communicate total residual to all ranks / obtain it on each rank
+  MPI_Bcast(&globalResidual, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    // communicate maximum time step size to all ranks
-    MPI_Bcast(&minTimeStepSize, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    // wait for broadcast to finish
-    MPI_Waitall(
-      receiveRequests_.size(), receiveRequests_.data(), MPI_STATUSES_IGNORE
-    );
+  return globalResidual;
+}
 
-    return minTimeStepSize;
-  } else {
-    // the other ranks read the maximum time step size from the main rank
-    double minTimeStepSize;
-    MPI_Bcast(&minTimeStepSize, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    return minTimeStepSize;
-  }
+std::array<double, 2>
+DataExchanger::getMaximumVelocity(std::array<double, 2> &velocity) {
+  std::array<double, 2> localVelocity = velocity;
+  std::array<double, 2> maxVelocity = {0, 0};
 
+  // obtain the maximum velocity {maxU, maxV} from all ranks using MPI_Reduce -
+  // MAX
+  MPI_Reduce(&localVelocity, &maxVelocity, 2, MPI_DOUBLE, MPI_MAX, 0,
+             MPI_COMM_WORLD);
+
+  // communicate maximum velocity to all ranks / obtain it on each rank
+  MPI_Bcast(&maxVelocity, 2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+  return maxVelocity;
 }

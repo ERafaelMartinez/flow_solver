@@ -8,12 +8,13 @@
    Over-Relaxation (SOR) iterative method to solve the pressure Poisson equation
    in a numerical simulation framework.
 */
-class SORPressureSolver : public PressureSolver {
+class RedBlackSORPressureSolver : public PressureSolver {
 public:
   // Constructor
-  SORPressureSolver(std::shared_ptr<Discretization> discretization,
-                    std::shared_ptr<Partitioning> partitioning,
-                    double convergence_tol, int max_iterations, double omega);
+  RedBlackSORPressureSolver(std::shared_ptr<Discretization> discretization,
+                            std::shared_ptr<Partitioning> partitioning,
+                            double convergence_tol, int max_iterations,
+                            double omega);
 
   /**
    * @brief Calculate the pressure for one iteration using SOR.
@@ -24,5 +25,11 @@ public:
   void calcPressureIter() override;
 
 private:
+  enum GridColor { RED, BLACK };
+
   double omega_; // Relaxation factor for SOR
+                 //
+
+  void doColorIteration(GridColor color, const double coeff, const double idx2,
+                        const double idy2);
 };

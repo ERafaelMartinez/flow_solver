@@ -43,8 +43,11 @@ public:
   // exchange variables via MPI with neighbors
   void exchange(FieldVariable &fieldVar);
   
-  // exchange time step size with main rank
-  double getMinimumTimeStepSize(double &timeStepSize);
+  // obtain the maximum velocity {maxU, maxV} from all ranks
+  std::array<double, 2> getMaximumVelocity(std::array<double, 2> &maxVelocity);
+
+  // obtain the total residual from all ranks
+  double getResidual(double res);
 
 private:
   std::shared_ptr<Partitioning> partitioning_;

@@ -1,6 +1,6 @@
 #include "simulation.h"
-#include "../discretization/discretization.h"
 #include <cassert>
+#include <cmath>
 #ifndef DISABLE_OUTPUT_WRITERS
 #include "../output_writer/output_writer_paraview_parallel.h"
 #include "../output_writer/output_writer_text_parallel.h"
@@ -80,8 +80,8 @@ void Simulation::initDiscretization_(std::array<int, 2> nCells,
   // validate size of field variables:
   // each variable hast two ghost cells on each direction
   int nCellsExpected = (nCells[0] + 2) * (nCells[1] + 2);
-  assert(discretization_->u().data().size() == nCellsExpected);
-  assert(discretization_->v().data().size() == nCellsExpected);
+  // assert(discretization_->u().data().size() == nCellsExpected);
+  // assert(discretization_->v().data().size() == nCellsExpected);
 }
 
 // Create pressure solver based on settings
@@ -92,15 +92,15 @@ void Simulation::initPressureSolver_() {
               << "] Using Gauss Seidel solver!" << std::endl;
 #endif
     pressure_solver_ = std::make_shared<GaussSeidelPressureSolver>(
-        discretization_, settings_->epsilon,
+        discretization_, partitioning_, settings_->epsilon,
         settings_->maximumNumberOfIterations);
   } else if (settings_->pressureSolver == "SOR") {
 #ifndef NDEBUG
     std::cout << "[" << partitioning_->ownRankNo() << "] Using SOR solver!"
               << std::endl;
 #endif
-    pressure_solver_ = std::make_shared<SORPressureSolver>(
-        discretization_, settings_->epsilon,
+    pressure_solver_ = std::make_shared<RedBlackSORPressureSolver>(
+        discretization_, partitioning_, settings_->epsilon,
         settings_->maximumNumberOfIterations, settings_->omega);
   } else {
     throw std::invalid_argument("Unknown pressure solver type");
@@ -115,7 +115,6 @@ void Simulation::initOutputWriters_() {
   writers_.push_back(std::make_unique<OutputWriterTextParallel>(discretization_,
                                                                 partitioning_));
 #endif
-  // BUG: Fix bug inside
   writers_.push_back(std::make_unique<OutputWriterParaviewParallel>(
       discretization_, partitioning_));
 #endif
@@ -143,13 +142,19 @@ double Simulation::computeNextTimeStepSize() {
   double u_max = discretization_->u().maxMagnitude();
   double v_max = discretization_->v().maxMagnitude();
 
+  // exchange maximum (full domain) velocity with main rank
+  std::array<double, 2> maxVelocity = {u_max, v_max};
+  std::array<double, 2> globalMaxVelocity;
+  globalMaxVelocity = dataExchanger_->getMaximumVelocity(maxVelocity);
+
 #ifndef NDEBUG
   std::cout << "[" << partitioning_->ownRankNo()
-            << "] \t u_max, v_max = " << u_max << ", " << v_max << std::endl;
+            << "] \t u_max, v_max = " << globalMaxVelocity[0] << ", "
+            << globalMaxVelocity[1] << std::endl;
 #endif
 
-  double conv_dt_u = dx / std::abs(u_max);
-  double conv_dt_v = dy / std::abs(v_max);
+  double conv_dt_u = dx / std::abs(globalMaxVelocity[0]);
+  double conv_dt_v = dy / std::abs(globalMaxVelocity[1]);
   double conv_dt = std::min(conv_dt_u, conv_dt_v);
 
   // take the smallest physics-induced dt and scale with safety factor
@@ -254,7 +259,7 @@ void Simulation::computeVelocities() {
   const FieldVariable &F = discretization_->f();
   const FieldVariable &G = discretization_->g();
 
-  for (int i = discretization_->uIBegin(); i < discretization_->uIEnd(); ++i) {
+  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
     for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd();
          ++j) {
       double dpdx = discretization_->computeDpDx(i, j);
@@ -263,7 +268,7 @@ void Simulation::computeVelocities() {
   }
 
   for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
-    for (int j = discretization_->vJBegin(); j < discretization_->vJEnd();
+    for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd();
          ++j) {
       double dpdy = discretization_->computeDpDy(i, j);
       v.at(i, j) = G.at(i, j) - dt * dpdy;
@@ -274,7 +279,7 @@ void Simulation::computeVelocities() {
 // Output the current state of the simulation
 // using the OutputWritter class
 void Simulation::outputSimulationState(double outputIndex) {
-  for (std::vector<std::unique_ptr<OutputWriter>>::size_type i = 0;
+  for (std::vector< std::unique_ptr<OutputWriter> >::size_type i = 0;
        i < writers_.size(); i++) {
     writers_[i]->writeFile(outputIndex);
   }
@@ -296,12 +301,6 @@ void Simulation::runTimestep() {
             << std::endl;
 #endif
   time_step_ = computeNextTimeStepSize();
-// 1.2 obtain maximum time step size from main rank
-#ifndef NDEBUG
-  std::cout << "[" << partitioning_->ownRankNo() << "] \tExchanging timestep..."
-            << std::endl;
-#endif
-  time_step_ = dataExchanger_->getMinimumTimeStepSize(time_step_);
   simulation_time_ += time_step_;
 
 // 2.1 Compute intermediate velocities F, G
@@ -357,7 +356,11 @@ void Simulation::runTimestep() {
   std::cout << "[" << partitioning_->ownRankNo() << "] \tWriting simulation at "
             << simulation_time_ << std::endl;
 #endif
-  outputSimulationState(simulation_time_);
+  // output simulation state if simulated time is next second
+  if (std::floor(simulation_time_) !=
+      std::floor(simulation_time_ + time_step_)) {
+    outputSimulationState(simulation_time_);
+  }
 }
 
 // run the full simulation

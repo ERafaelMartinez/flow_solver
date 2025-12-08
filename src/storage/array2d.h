@@ -23,10 +23,10 @@ public:
   //! to change the value
   double at(int i, int j) const;
 
-  std::vector<double> data() {
-    return _data;
-  } //< storage array values, in row-major order
-    
+  std::vector<double> &data() { return _data; }
+
+  const std::vector<double> &data() const { return _data; }
+
 protected:
   std::vector<double> _data; //< storage array values, in row-major order
 
