@@ -1,5 +1,4 @@
 #include "simulation.h"
-#include "../discretization/discretization.h"
 #include <cassert>
 #ifndef DISABLE_OUTPUT_WRITERS
 #include "../output_writer/output_writer_paraview_parallel.h"
@@ -99,7 +98,7 @@ void Simulation::initPressureSolver_() {
     std::cout << "[" << partitioning_->ownRankNo() << "] Using SOR solver!"
               << std::endl;
 #endif
-    pressure_solver_ = std::make_shared<SORPressureSolver>(
+    pressure_solver_ = std::make_shared<RedBlackSORPressureSolver>(
         discretization_, partitioning_, settings_->epsilon,
         settings_->maximumNumberOfIterations, settings_->omega);
   } else {
@@ -115,7 +114,6 @@ void Simulation::initOutputWriters_() {
   writers_.push_back(std::make_unique<OutputWriterTextParallel>(discretization_,
                                                                 partitioning_));
 #endif
-  // BUG: Fix bug inside
   writers_.push_back(std::make_unique<OutputWriterParaviewParallel>(
       discretization_, partitioning_));
 #endif
