@@ -32,7 +32,6 @@ void SORPressureSolver::calcPressureIter() {
   for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); j++) {
     for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd();
          i++) {
-      // Compute the Gauss-Seidel target value
       const double p_GS =
           coeff * ((p.at(i - 1, j) + p.at(i + 1, j)) * idx2 +
                    (p.at(i, j - 1) + p.at(i, j + 1)) * idy2 - rhs.at(i, j));

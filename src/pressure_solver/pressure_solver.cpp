@@ -118,8 +118,7 @@ void PressureSolver::setBoundaryConditionsLeft() {
   FieldVariable &pressure_field = discretization_->p();
 
   // Left boundary: p(0,j) = p(1,j)
-  for (int j = discretization_->pJBegin() - 1;
-       j <= discretization_->pJEnd() + 1; j++) {
+  for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); j++) {
     pressure_field.at(discretization_->pIBegin() - 1, j) =
         pressure_field.at(discretization_->pIBegin(), j);
   }
@@ -130,8 +129,7 @@ void PressureSolver::setBoundaryConditionsRight() {
   FieldVariable &pressure_field = discretization_->p();
 
   // Right boundary: p(imax + 1,j) = p(imax,j)
-  for (int j = discretization_->pJBegin() - 1;
-       j <= discretization_->pJEnd() + 1; j++) {
+  for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); j++) {
     pressure_field.at(discretization_->pIEnd() + 1, j) =
         pressure_field.at(discretization_->pIEnd(), j);
   }

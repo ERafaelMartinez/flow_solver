@@ -49,24 +49,24 @@ void DataExchanger::packDataBuffers_(
   for (int i = 0; i < 4; ++i) {
     if (neighborsRank_[i] != -1) {
       switch (i) {
-      case 0:
+      case 0:  // left neighbor
         dataBuffers[i]->update(
-            // left internal-boundary column index is 1
+            // left internal-boundary is shared; ghost cell is at index 0
             fieldVar.getColumnValues(1, rowRange));
         break;
-      case 1:
+      case 1:  // right neighbor
         dataBuffers[i]->update(
-            // right internal-boundary column index is size[0] - 2
+            // right internal-boundary is shared; ghost cell is at index size[0] - 1
             fieldVar.getColumnValues(fieldVar.size()[0] - 2, rowRange));
         break;
-      case 2:
+      case 2:  // bottom neighbor
         dataBuffers[i]->update(
-            // bottom internal-boundary row index is 1
+            // bottom internal-boundary is shared; ghost cell is at index 0
             fieldVar.getRowValues(1, columnRange));
         break;
-      case 3:
+      case 3:  // top neighbor
         dataBuffers[i]->update(
-            // top internal-boundary row index is size[1] - 2
+            // top internal-boundary is shared; ghost cell is at index size[1] - 1
             fieldVar.getRowValues(fieldVar.size()[1] - 2, columnRange));
         break;
       }
@@ -87,24 +87,24 @@ void DataExchanger::unpackDataBuffers_(
   for (int i = 0; i < 4; ++i) {
     if (neighborsRank_[i] != -1) {
       switch (i) {
-      case 0:
+      case 0:  // left neighbor
         fieldVar.setColumnValues(
-            // left ghost-column index is 0
+            // received data is stored in ghost cell at index 0 (left)
             0, rowRange, dataBuffers[i]->asArray());
         break;
-      case 1:
+      case 1:  // right neighbor
         fieldVar.setColumnValues(
-            // right ghost-column index is size[0] - 1
+            // received data is stored in ghost cell at index size[0] - 1 (right)
             fieldVar.size()[0] - 1, rowRange, dataBuffers[i]->asArray());
         break;
-      case 2:
+      case 2:  // bottom neighbor
         fieldVar.setRowValues(
-            // bottom ghost-row index is 0
+            // received data is stored in ghost cell at index 0 (bottom)
             0, columnRange, dataBuffers[i]->asArray());
         break;
-      case 3:
+      case 3:  // top neighbor
         fieldVar.setRowValues(
-            // top ghost-row index is size[1] - 1
+            // received data is stored in ghost cell at index size[1] - 1 (top)
             fieldVar.size()[1] - 1, columnRange, dataBuffers[i]->asArray());
         break;
       }
