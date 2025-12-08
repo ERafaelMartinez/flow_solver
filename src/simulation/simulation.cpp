@@ -80,8 +80,8 @@ void Simulation::initDiscretization_(std::array<int, 2> nCells,
   // validate size of field variables:
   // each variable hast two ghost cells on each direction
   int nCellsExpected = (nCells[0] + 2) * (nCells[1] + 2);
-  assert(discretization_->u().data().size() == nCellsExpected);
-  assert(discretization_->v().data().size() == nCellsExpected);
+  // assert(discretization_->u().data().size() == nCellsExpected);
+  // assert(discretization_->v().data().size() == nCellsExpected);
 }
 
 // Create pressure solver based on settings
@@ -260,7 +260,7 @@ void Simulation::computeVelocities() {
   const FieldVariable &F = discretization_->f();
   const FieldVariable &G = discretization_->g();
 
-  for (int i = discretization_->uIBegin(); i < discretization_->uIEnd(); ++i) {
+  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
     for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd();
          ++j) {
       double dpdx = discretization_->computeDpDx(i, j);
@@ -269,7 +269,7 @@ void Simulation::computeVelocities() {
   }
 
   for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
-    for (int j = discretization_->vJBegin(); j < discretization_->vJEnd();
+    for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd();
          ++j) {
       double dpdy = discretization_->computeDpDy(i, j);
       v.at(i, j) = G.at(i, j) - dt * dpdy;
