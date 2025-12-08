@@ -29,14 +29,14 @@ void RedBlackSORPressureSolver::calcPressureIter() {
   int redStartingIndex = 0;
   int blackStartingIndex = 1;
 
-  // 1. First do the 'black' cells
+  // 1. First do the 'red' cells
   doColorIteration(GridColor::RED, coeff, idx2, idy2);
 
   // 2. Then exchange the values
   // It should be fine to exchange all values of p here.
   dataExchanger_->exchange(discretization_->p());
 
-  // 3. Then do the black cells
+  // 3. Then do the 'black' cells
   doColorIteration(GridColor::BLACK, coeff, idx2, idy2);
 
   // 4. Then exchange the values again
