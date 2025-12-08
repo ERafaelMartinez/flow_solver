@@ -43,19 +43,4 @@ void GaussSeidelPressureSolver::calcPressureIter() {
     }
   }
 
-  // Compute residual
-  res_ = 0.; // Reset residual for this iteration
-  for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); ++j)
-    for (int i = discretization_->pIBegin(); i <= discretization_->pIEnd();
-         ++i) {
-      // Add the squared difference to the residual times normalization factor
-      double laplacian =
-          ((p.at(i + 1, j) - 2 * p.at(i, j) + p.at(i - 1, j)) / (dx * dx) +
-           (p.at(i, j + 1) - 2 * p.at(i, j) + p.at(i, j - 1)) / (dy * dy));
-      double diff = rhs.at(i, j) - laplacian;
-      res_ += diff * diff / (Nx * Ny);
-    }
-
-  // at the end res_ = r**2 / (Nx*Ny), where r is the difference between rhs and
-  // the new laplacian
 }

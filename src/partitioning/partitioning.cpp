@@ -1,6 +1,7 @@
 #include "./partitioning.h"
 #include <array>
 #include <cmath>
+#include <iostream>
 #include <mpi.h>
 
 void Partitioning::initialize(std::array<int, 2> nCellsGlobal) {
@@ -45,6 +46,14 @@ void Partitioning::initialize(std::array<int, 2> nCellsGlobal) {
                                   nSubdomainsX, nSubdomainsY);
   neighbourTop_ = getProcessAt(subdomainColIndex, subdomainRowIndex + 1,
                                nSubdomainsX, nSubdomainsY);
+
+#ifndef NDEBUG
+  std::cout << "Own rank: " << ownRank << "\n";
+  std::cout << "\t Top: " << neighbourTop_ << "\n";
+  std::cout << "\t Bottom: " << neighbourBottom_ << "\n";
+  std::cout << "\t Left: " << neighbourLeft_ << "\n";
+  std::cout << "\t Right: " << neighbourRight_ << "\n";
+#endif
 }
 
 int Partitioning::getProcessAt(int i, int j, int numOfColumns,

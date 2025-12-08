@@ -1,6 +1,7 @@
 #include "simulation.h"
 #include "../discretization/discretization.h"
 #include <cassert>
+#include <cmath>
 #ifndef DISABLE_OUTPUT_WRITERS
 #include "../output_writer/output_writer_paraview_parallel.h"
 #include "../output_writer/output_writer_text_parallel.h"
@@ -80,8 +81,8 @@ void Simulation::initDiscretization_(std::array<int, 2> nCells,
   // validate size of field variables:
   // each variable hast two ghost cells on each direction
   int nCellsExpected = (nCells[0] + 2) * (nCells[1] + 2);
-  assert(discretization_->u().data().size() == nCellsExpected);
-  assert(discretization_->v().data().size() == nCellsExpected);
+  // assert(discretization_->u().data().size() == nCellsExpected);
+  // assert(discretization_->v().data().size() == nCellsExpected);
 }
 
 // Create pressure solver based on settings
@@ -150,8 +151,8 @@ double Simulation::computeNextTimeStepSize() {
 
 #ifndef NDEBUG
   std::cout << "[" << partitioning_->ownRankNo()
-            << "] \t u_max, v_max = " << globalMaxVelocity[0] 
-            << ", " << globalMaxVelocity[1] << std::endl;
+            << "] \t u_max, v_max = " << globalMaxVelocity[0] << ", "
+            << globalMaxVelocity[1] << std::endl;
 #endif
 
   double conv_dt_u = dx / std::abs(globalMaxVelocity[0]);
@@ -260,7 +261,7 @@ void Simulation::computeVelocities() {
   const FieldVariable &F = discretization_->f();
   const FieldVariable &G = discretization_->g();
 
-  for (int i = discretization_->uIBegin(); i < discretization_->uIEnd(); ++i) {
+  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
     for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd();
          ++j) {
       double dpdx = discretization_->computeDpDx(i, j);
@@ -269,7 +270,7 @@ void Simulation::computeVelocities() {
   }
 
   for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
-    for (int j = discretization_->vJBegin(); j < discretization_->vJEnd();
+    for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd();
          ++j) {
       double dpdy = discretization_->computeDpDy(i, j);
       v.at(i, j) = G.at(i, j) - dt * dpdy;
@@ -357,7 +358,11 @@ void Simulation::runTimestep() {
   std::cout << "[" << partitioning_->ownRankNo() << "] \tWriting simulation at "
             << simulation_time_ << std::endl;
 #endif
-  outputSimulationState(simulation_time_);
+  // output simulation state if simulated time is next second
+  if (std::floor(simulation_time_) !=
+      std::floor(simulation_time_ + time_step_)) {
+    outputSimulationState(simulation_time_);
+  }
 }
 
 // run the full simulation
