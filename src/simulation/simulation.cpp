@@ -211,7 +211,7 @@ void Simulation::computeIntermediateVelocities() {
             << std::endl;
 #endif
 
-  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
+  for (int i = discretization_->uIBegin(); i < discretization_->uIEnd(); ++i) {
     for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd();
          ++j) {
       // Compute F(i,j)
@@ -230,7 +230,7 @@ void Simulation::computeIntermediateVelocities() {
             << std::endl;
 #endif
   for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
-    for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd();
+    for (int j = discretization_->vJBegin(); j < discretization_->vJEnd();
          ++j) {
       // Compute G(i,j)
       double d2vdx2 = discretization_->computeD2vDx2(i, j);

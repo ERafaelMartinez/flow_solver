@@ -1,6 +1,7 @@
 #include "pressure_solver.h"
 #include <iostream>
 #include <ostream>
+#include <cmath>
 
 /* This file implements the PressureSolver class, which is a specific
    implementation of the PressureSolver interface using the Gauss-Seidel
@@ -57,7 +58,7 @@ void PressureSolver::calcRes() {
       double laplacian =
           ((p.at(i + 1, j) - 2 * p.at(i, j) + p.at(i - 1, j)) * idx2 +
            (p.at(i, j + 1) - 2 * p.at(i, j) + p.at(i, j - 1)) * idy2);
-      double diff = laplacian - rhs.at(i, j);
+      double diff = std::fabs(laplacian - rhs.at(i, j));
       localResidual += (diff * diff);
     }
   }
@@ -118,7 +119,7 @@ void PressureSolver::setBoundaryConditionsLeft() {
   FieldVariable &pressure_field = discretization_->p();
 
   // Left boundary: p(0,j) = p(1,j)
-  for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); j++) {
+  for (int j = discretization_->pJBegin() - 1; j <= discretization_->pJEnd() + 1; j++) {
     pressure_field.at(discretization_->pIBegin() - 1, j) =
         pressure_field.at(discretization_->pIBegin(), j);
   }
@@ -129,7 +130,7 @@ void PressureSolver::setBoundaryConditionsRight() {
   FieldVariable &pressure_field = discretization_->p();
 
   // Right boundary: p(imax + 1,j) = p(imax,j)
-  for (int j = discretization_->pJBegin(); j <= discretization_->pJEnd(); j++) {
+  for (int j = discretization_->pJBegin() - 1; j <= discretization_->pJEnd() + 1; j++) {
     pressure_field.at(discretization_->pIEnd() + 1, j) =
         pressure_field.at(discretization_->pIEnd(), j);
   }

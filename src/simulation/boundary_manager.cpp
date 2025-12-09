@@ -69,7 +69,7 @@ void BoundaryManager::applyTopBoundaryU() {
   FieldVariable &u = discretization_->u();
   const std::array<double, 2> &dirichletBcTop = settings_->dirichletBcTop;
 
-  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
+  for (int i = discretization_->uIBegin() - 1; i <= discretization_->uIEnd() + 1; ++i) {
     // No point directly at the top boundary for u, so we set the value
     // in the ghost cell so that the interpolation to the end
     // point in the grid yields the BC at the boundary.
@@ -84,7 +84,7 @@ void BoundaryManager::applyBottomBoundaryU() {
   FieldVariable &u = discretization_->u();
   const std::array<double, 2> &dirichletBcBottom = settings_->dirichletBcBottom;
 
-  for (int i = discretization_->uIBegin(); i <= discretization_->uIEnd(); ++i) {
+  for (int i = discretization_->uIBegin() - 1; i <= discretization_->uIEnd() + 1; ++i) {
     // No point directly at the boundary for u, so we set the value
     // in the ghost cell so that the interpolation to the first
     // point in the grid yields the BC at the boundary.
@@ -99,7 +99,7 @@ void BoundaryManager::applyTopBoundaryV() {
   FieldVariable &v = discretization_->v();
   const std::array<double, 2> &dirichletBcTop = settings_->dirichletBcTop;
 
-  for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
+  for (int i = discretization_->vIBegin() - 1; i <= discretization_->vIEnd() + 1; ++i) {
     // For v there is a point directly at the boundary, so we set
     // it explicitly on the final valid point and propagate it to
     // the ghost cell as well.
@@ -111,7 +111,7 @@ void BoundaryManager::applyBottomBoundaryV() {
   FieldVariable &v = discretization_->v();
   const std::array<double, 2> &dirichletBcBottom = settings_->dirichletBcBottom;
 
-  for (int i = discretization_->vIBegin(); i <= discretization_->vIEnd(); ++i) {
+  for (int i = discretization_->vIBegin() - 1; i <= discretization_->vIEnd() + 1; ++i) {
     // For v, as v is defined at the top/bottom edges of the cells
     // then we can directly set the value to the ghost cell.
     v.at(i, discretization_->vJBegin() - 1) = dirichletBcBottom[1];
@@ -124,7 +124,7 @@ void BoundaryManager::applyLeftBoundaryU() {
 
   // We start and end in the indices of the ghost cells to
   // prioritize the left-right boundary conditions over the corners
-  for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd() + 1; ++j) {
+  for (int j = discretization_->uJBegin() - 1; j <= discretization_->uJEnd() + 1; ++j) {
     // Left boundary:
     // The u value of the ghost cell falls directly at the boundary so we set it
     // directly
@@ -139,7 +139,7 @@ void BoundaryManager::applyRightBoundaryU() {
 
   // We start and end in the indices of the ghost cells to
   // prioritize the left-right boundary conditions over the corners
-  for (int j = discretization_->uJBegin(); j <= discretization_->uJEnd() + 1; ++j) {
+  for (int j = discretization_->uJBegin() - 1; j <= discretization_->uJEnd() + 1; ++j) {
     // Right boundary:
     // Analogous to the left boundary for the u velocity,
     // the end point of the domain is directly at the boundary
@@ -153,7 +153,7 @@ void BoundaryManager::applyLeftBoundaryV() {
   FieldVariable &v = discretization_->v();
   const std::array<double, 2> &dirichletBcLeft = settings_->dirichletBcLeft;
 
-  for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd(); ++j) {
+  for (int j = discretization_->vJBegin() - 1; j <= discretization_->vJEnd() + 1; ++j) {
     // For v, the first domain point is not at the boundary, so we set the
     // value at the ghost cell such that the average yields the desired
     // condition inbetween: v(0, j) = 2*v_bbc - v(i_begin,j)
@@ -166,7 +166,7 @@ void BoundaryManager::applyRightBoundaryV() {
   FieldVariable &v = discretization_->v();
   const std::array<double, 2> &dirichletBcRight = settings_->dirichletBcRight;
 
-  for (int j = discretization_->vJBegin(); j <= discretization_->vJEnd(); ++j) { 
+  for (int j = discretization_->vJBegin() - 1; j <= discretization_->vJEnd() + 1; ++j) { 
     // For v, we set the ghost cell value such that the average
     // with the last domain point yields the desired BC at the boundary
     // v(end + 1, j) = 2*v_rbc - v(end,j)
@@ -183,7 +183,7 @@ void BoundaryManager::applyTopBoundaryF() {
   FieldVariable &f = discretization_->f();
   const FieldVariable &u = discretization_->u();
 
-  for (int i = discretization_->fIBegin(); i <= discretization_->fIEnd(); ++i) {
+  for (int i = discretization_->fIBegin() - 1; i <= discretization_->fIEnd() + 1; ++i) {
     // F's boundary condition is derived from the Neumann BC for p:
     // f(i,jmax + 1) = u(i,jmax + 1)
     f.at(i, discretization_->fJEnd() + 1) =
@@ -195,7 +195,7 @@ void BoundaryManager::applyBottomBoundaryF() {
   FieldVariable &f = discretization_->f();
   const FieldVariable &u = discretization_->u();
 
-  for (int i = discretization_->fIBegin(); i <= discretization_->fIEnd(); ++i) {
+  for (int i = discretization_->fIBegin() - 1; i <= discretization_->fIEnd() + 1; ++i) {
     // F's boundary condition is derived from the Neumann BC for p:
     // f(i, 0) = u(i, 0)
     f.at(i, discretization_->fJBegin() - 1) =
@@ -207,7 +207,7 @@ void BoundaryManager::applyTopBoundaryG() {
   FieldVariable &g = discretization_->g();
   const FieldVariable &v = discretization_->v();
 
-  for (int i = discretization_->gIBegin(); i <= discretization_->gIEnd(); ++i) {
+  for (int i = discretization_->gIBegin() - 1; i <= discretization_->gIEnd() + 1; ++i) {
     // G's boundary condition is derived from the Neumann BC for p:
     // g(i, jmax) = v(i, jmax)
     g.at(i, discretization_->gJEnd()) = v.at(i, discretization_->gJEnd());
@@ -218,7 +218,7 @@ void BoundaryManager::applyBottomBoundaryG() {
   FieldVariable &g = discretization_->g();
   const FieldVariable &v = discretization_->v();
 
-  for (int i = discretization_->gIBegin(); i <= discretization_->gIEnd(); ++i) {
+  for (int i = discretization_->gIBegin() - 1; i <= discretization_->gIEnd() + 1; ++i) {
     // G's boundary condition is derived from the Neumann BC for p:
     // g(i, 0) = v(i, 0)
     g.at(i, discretization_->gJBegin() - 1) =
@@ -232,7 +232,7 @@ void BoundaryManager::applyLeftBoundaryF() {
 
   // We start and end in the indices of the ghost cells to
   // prioritize the left-right boundary conditions over the corners
-  for (int j = discretization_->fJBegin(); j <= discretization_->fJEnd(); ++j) {
+  for (int j = discretization_->fJBegin() - 1; j <= discretization_->fJEnd() + 1; ++j) {
     // F's boundary condition is derived from the Neumann BC for p:
     // f(0, j) = u(0, j)
     f.at(discretization_->fIBegin() - 1, j) =
@@ -246,7 +246,7 @@ void BoundaryManager::applyRightBoundaryF() {
 
   // We start and end in the indices of the ghost cells to
   // prioritize the left-right boundary conditions over the corners
-  for (int j = discretization_->fJBegin(); j <= discretization_->fJEnd(); ++j) {
+  for (int j = discretization_->fJBegin() - 1; j <= discretization_->fJEnd() + 1; ++j) {
     // F's boundary condition is derived from the Neumann BC for p:
     // f(imax, j) = u(imax, j)
     f.at(discretization_->fIEnd(), j) = u.at(discretization_->fIEnd(), j);
@@ -259,7 +259,7 @@ void BoundaryManager::applyLeftBoundaryG() {
 
   // We start and end in the indices of the ghost cells to
   // prioritize the left-right boundary conditions over the corners
-  for (int j = discretization_->gJBegin(); j <= discretization_->gJEnd(); ++j) {
+  for (int j = discretization_->gJBegin() - 1; j <= discretization_->gJEnd() + 1; ++j) {
     // G's boundary condition is derived from the Neumann BC for p:
     // g(0, j) = v(0, j)
     g.at(discretization_->gIBegin() - 1, j) =
@@ -273,7 +273,7 @@ void BoundaryManager::applyRightBoundaryG() {
 
   // We start and end in the indices of the ghost cells to
   // prioritize the left-right boundary conditions over the corners
-  for (int j = discretization_->gJBegin(); j <= discretization_->gJEnd(); ++j) {
+  for (int j = discretization_->gJBegin() - 1; j <= discretization_->gJEnd() + 1; ++j) {
     // G's boundary condition is derived from the Neumann BC for p:
     // g(imax + 1, j) = v(imax + 1, j)
     g.at(discretization_->gIEnd() + 1, j) =
