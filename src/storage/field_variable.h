@@ -6,7 +6,7 @@
 
 class FieldVariable : public Array2D {
 public:
-  FieldVariable(std::array<int, 2> gridSize, std::array<double, 2> offset,
+  FieldVariable(std::array<int, 2> gridSize, std::array<double, 2> origin,
                 std::array<double, 2> cellSize);
 
   double interpolateAt(double x, double y) const;
@@ -25,5 +25,5 @@ public:
 
 private:
   const std::array<double, 2> _cellSize;
-  const std::array<double, 2> _offset;
+  const std::array<double, 2> _origin;
 };
