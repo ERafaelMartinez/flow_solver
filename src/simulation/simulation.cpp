@@ -303,18 +303,18 @@ void Simulation::runTimestep() {
   time_step_ = computeNextTimeStepSize();
   simulation_time_ += time_step_;
 
-// 2.1 Compute intermediate velocities F, G
-#ifndef NDEBUG
-  std::cout << "[" << partitioning_->ownRankNo()
-            << "] \tComputing intermediate velocity field" << std::endl;
-#endif
-  computeIntermediateVelocities();
 // 2.2 Enforce boundary conditions for F and G
 #ifndef NDEBUG
   std::cout << "[" << partitioning_->ownRankNo()
             << "] \tSetting boundaries for F and G..." << std::endl;
 #endif
   boundaryManager_->setBoundaryConditionsFG();
+// 2.1 Compute intermediate velocities F, G
+#ifndef NDEBUG
+  std::cout << "[" << partitioning_->ownRankNo()
+            << "] \tComputing intermediate velocity field" << std::endl;
+#endif
+  computeIntermediateVelocities();
 // 2.3 Exchange F and G with neighbors: not required
 
 // 3.1 Compute RHS for pressure poisson equation
@@ -358,7 +358,7 @@ void Simulation::runTimestep() {
 #endif
   // output simulation state if simulated time is next second
   if (std::floor(simulation_time_) !=
-      std::floor(simulation_time_ + time_step_)) {
+      std::floor(simulation_time_ - time_step_)) {
     outputSimulationState(simulation_time_);
   }
 }
