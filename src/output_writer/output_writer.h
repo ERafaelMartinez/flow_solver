@@ -1,24 +1,28 @@
 #pragma once
 
-#include "discretization/discretization.h"
+#include "../discretization/discretization.h"
+#include "../partitioning/partitioning.h"
 
 #include <memory>
 
 /** Inteface class for writing simulation data output.
  */
-class OutputWriter
-{
+class OutputWriter {
 public:
   //! constructor
-  //! @param discretization shared pointer to the discretization object that will contain all the data to be written to the file
-  OutputWriter(std::shared_ptr<Discretization> discretization);
-
-  virtual ~OutputWriter() {}
+  OutputWriter(std::shared_ptr<Discretization> discretization,
+               std::shared_ptr<Partitioning> partitioning);
 
   //! write current velocities to file, filename is output_<count>.vti
   virtual void writeFile(double currentTime) = 0;
 
 protected:
-  std::shared_ptr<Discretization> discretization_; //< a shared pointer to the discretization which contains all data that will be written to the file
-  int fileNo_;                                     //< a counter that increments for every file, this number is part of the file name of output files
+  std::shared_ptr<Discretization>
+      discretization_; //< a shared pointer to the discretization which contains
+                       //all data that will be written to the file
+  std::shared_ptr<Partitioning> partitioning_; //< the partitioning object that knowns
+                                    //about the domain decomposition, only
+                                    //significant when executing in parallel
+  int fileNo_; //< a counter that increments for every file, this number is part
+               //of the file name of output files
 };

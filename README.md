@@ -14,11 +14,11 @@
 execute the following command to make a clean (debug) build of the project in the root dir
 
 ```sh
-make prestine_debug
+make pristine
 ```
 
-> **note**: you need to always call `make prestine_debug` if any of the CMakeLists.txt files are changed
-> **note**: you can also use `make prestine_release` for a release build
+> **note**: you need to always call `make pristine` if any of the CMakeLists.txt files are changed
+> **note**: you can also use `make pristine_release` for a release build
 
 
 3. re-build the project after changes using the following command in the root dir

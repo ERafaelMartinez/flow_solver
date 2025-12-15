@@ -1,19 +1,40 @@
 cmake_minimum_required(VERSION 3.8)
 
 # Define the project name.
-project(numsim)
+project(numsim_parallel)
 
 # Specify the name of the executable (${PROJECT_NAME} which is equal to what was set in the project() command).
 # Also specify the source files.
-add_executable(${PROJECT_NAME} main.cpp simulation.cpp)
+add_executable(${PROJECT_NAME} main.cpp)
 add_subdirectory(settings)
 add_subdirectory(output_writer)
 add_subdirectory(pressure_solver)
 add_subdirectory(staggered_grid)
 add_subdirectory(discretization)
+add_subdirectory(storage)
+add_subdirectory(partitioning)
+add_subdirectory(communication)
+add_subdirectory(simulation)
 
 # Add the project directory to include directories, to be able to include all project header files from anywhere
 target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR})
+
+# add MPI
+find_package(MPI REQUIRED)
+
+message("MPI FOUND: ${MPI_LIBRARIES}")
+include_directories(${MPI_INCLUDE_PATH})
+target_link_libraries(${PROJECT_NAME} ${MPI_LIBRARIES})
+
+if(MPI_COMPILE_FLAGS)
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
+endif()
+
+if(MPI_LINK_FLAGS)
+  set_target_properties(${PROJECT_NAME} PROPERTIES
+    LINK_FLAGS "${MPI_LINK_FLAGS}")
+endif()
 
 # Search for the external package "VTK"
 find_package(VTK)

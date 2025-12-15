@@ -1,8 +1,8 @@
 #pragma once
 
-#include "field_variable.h"
+#include "../storage/field_variable.h"
+#include <array>
 #include <stdexcept>
-
 
 class StaggeredGrid {
 private:
@@ -26,10 +26,12 @@ private:
   FieldVariable _g;
   FieldVariable _f;
 
-  std::array<int, 2> getVarGridSize(std::array<int, 2> gridSize,
-                                    std::array<int, 4> boundaries) const {
-    return {gridSize[0] + boundaries[1] + boundaries[3],
-            gridSize[1] + boundaries[0] + boundaries[2]};
+  std::array<int, 2> getVarGridSize(
+    std::array<int, 2> gridSize, std::array<int, 4> boundaries) const {
+    std::array<int, 2> varGridSize;
+    varGridSize[0] = gridSize[0] + boundaries[1] + boundaries[3];
+    varGridSize[1] = gridSize[1] + boundaries[0] + boundaries[2];
+    return varGridSize;
   }
 
   int getInnerIndex(FieldVariable var, std::array<int, 4> boundaries,
@@ -58,23 +60,38 @@ public:
   std::array<int, 2> gridSize() const { return _gridSize; }
   std::array<double, 2> cellSize() const { return _cellSize; }
 
-  FieldVariable& u() { return _u; }
-  const FieldVariable& u() const { return _u; }
+  // Alias for cellSize, used by Discretization callers expecting meshWidth
+  const std::array<double, 2> &meshWidth() const { return _cellSize; }
+  // Further aliases for cellSize, used by Discretization callers expecting
+  // meshWidth
+  const double &dx() const { return _cellSize[0]; }
+  const double &dy() const { return _cellSize[1]; }
 
-  FieldVariable& v() { return _v; }
-  const FieldVariable& v() const { return _v; }
+  // Alias for gridSize, used by Discretization callers expecting nCells
+  const std::array<int, 2> &nCells() const { return _gridSize; }
 
-  FieldVariable& p() { return _p; }
-  const FieldVariable& p() const { return _p; }
+  // Further aliases for gridSize, used by Discretization callers expecting
+  // nCells
+  const int &nCellsX() const { return _gridSize[0]; }
+  const int &nCellsY() const { return _gridSize[1]; }
 
-  FieldVariable& rhs() { return _rhs; }
-  const FieldVariable& rhs() const { return _rhs; }
+  FieldVariable &u() { return _u; }
+  const FieldVariable &u() const { return _u; }
 
-  FieldVariable& g() { return _g; }
-  const FieldVariable& g() const { return _g; }
+  FieldVariable &v() { return _v; }
+  const FieldVariable &v() const { return _v; }
 
-  FieldVariable& f() { return _f; }
-  const FieldVariable& f() const { return _f; }
+  FieldVariable &p() { return _p; }
+  const FieldVariable &p() const { return _p; }
+
+  FieldVariable &rhs() { return _rhs; }
+  const FieldVariable &rhs() const { return _rhs; }
+
+  FieldVariable &g() { return _g; }
+  const FieldVariable &g() const { return _g; }
+
+  FieldVariable &f() { return _f; }
+  const FieldVariable &f() const { return _f; }
 
   int uIBegin() const { return getInnerIndex(_u, _uBoundaries, I_BEGIN); }
   int uIEnd() const { return getInnerIndex(_u, _uBoundaries, I_END); }

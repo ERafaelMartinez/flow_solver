@@ -1,4 +1,5 @@
 BUILD_DIR=./build
+N_PROCS = 4
 
 all: debug
 
@@ -6,12 +7,23 @@ debug: clean_install cmake_debug install
 
 release: clean_install cmake_release install
 
-prestine_debug: clean_all cmake_debug install
+pristine: clean_all cmake_debug install
 
-prestine_release: clean_all cmake_release install
+pristine_release: clean_all cmake_release install
 
-run: 
-	cd $(BUILD_DIR) && ./numsim ../parameters.txt
+run: run-parallel
+
+run-serial: clean_out
+	cd $(BUILD_DIR) && mpiexec -n 1 ./numsim_parallel ../parameters/parameters.txt
+
+run-serial-3: clean_out
+	cd $(BUILD_DIR) && mpiexec -n 1 ./numsim_parallel ../parameters/parameters-3.txt
+
+run-parallel: clean_out
+	cd $(BUILD_DIR) && mpiexec -n $(N_PROCS) ./numsim_parallel ../parameters/parameters.txt
+
+run-parallel-3: clean_out
+	cd $(BUILD_DIR) && mpiexec -n $(N_PROCS) ./numsim_parallel ../parameters/parameters-3.txt
 
 cmake_debug:
 	mkdir -p $(BUILD_DIR)
@@ -26,6 +38,9 @@ install:
 
 clean_install:
 	@if [ -f $(BUILD_DIR)/Makefile ]; then cd $(BUILD_DIR) && make clean; fi
+
+clean_out:
+	rm -rf $(BUILD_DIR)/out
 
 clean_all:
 	rm -rf $(BUILD_DIR)

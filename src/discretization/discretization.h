@@ -1,6 +1,6 @@
 #pragma once
 
-#include "staggered_grid/staggered_grid.h"
+#include "../staggered_grid/staggered_grid.h"
 
 #include <array>
 
