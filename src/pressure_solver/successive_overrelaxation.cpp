@@ -24,7 +24,7 @@ void SORPressureSolver::calcPressureIter() {
   const double idy2 = 1.0 / (dy * dy);
 
   // Precompute coefficient
-  const double coeff = 1.0 / (2.0 * (idx2 + idy2));
+  const double coeff = dx * dx * dy * dy / (2.0 * (dx * dx + dy * dy));
 
   FieldVariable &p = discretization_->p();
   const FieldVariable &rhs = discretization_->rhs();

@@ -23,6 +23,8 @@ void GaussSeidelPressureSolver::calcPressureIter() {
   auto gridSize = discretization_->gridSize();
   int Nx = gridSize[0];
   int Ny = gridSize[1];
+  const double idx2 = 1.0 / (dx * dx);
+  const double idy2 = 1.0 / (dy * dy);
   double coeff = dx * dx * dy * dy / (2 * (dx * dx + dy * dy));
 
   // Get references to pressure and rhs fields
@@ -35,9 +37,9 @@ void GaussSeidelPressureSolver::calcPressureIter() {
       p.at(i, j) =
           coeff * (
                       // p(i-1,j) (new) + p(i+1,j) (old)
-                      (p.at(i - 1, j) + p.at(i + 1, j)) / (dx * dx) +
+                      (p.at(i - 1, j) + p.at(i + 1, j)) * idx2 +
                       // p(i,j-1) (new) + p(i,j+1) (old)
-                      (p.at(i, j - 1) + p.at(i, j + 1)) / (dy * dy) -
+                      (p.at(i, j - 1) + p.at(i, j + 1)) * idy2 -
                       // rhs(i,j) (new; with velocities of previous timestep)
                       rhs.at(i, j));
     }
