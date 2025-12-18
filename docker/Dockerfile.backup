@@ -55,8 +55,7 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
 # Copy requirements.txt and install Python dependencies
 COPY /ml_flow_sim/requirements.txt /tmp/requirements.txt
 RUN python3 -m pip install --upgrade pip \
-    && python3 -m pip install -r /tmp/requirements.txt \
-    && rm /tmp/requirements.txt
+    && python3 -m pip install -r /tmp/requirements.txt
 
 # Ensure libjawt.so is correctly linked
 RUN echo "/usr/lib/jvm/java-11-openjdk-amd64/lib" > /etc/ld.so.conf.d/java.conf \
@@ -68,9 +67,6 @@ RUN echo "/usr/lib/jvm/java-11-openjdk-amd64/lib/server" >> /etc/ld.so.conf.d/ja
 
 # Set environment variables for VTK
 ENV VTK_DIR=/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1
-
-# Expose Jupyter notebook port
-EXPOSE 8888
 
 # Create a working directory for your project
 WORKDIR /workspace

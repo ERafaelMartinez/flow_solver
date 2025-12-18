@@ -356,7 +356,8 @@ void Simulation::runTimestep() {
   std::cout << "[" << partitioning_->ownRankNo() << "] \tWriting simulation at "
             << simulation_time_ << std::endl;
 #endif
-  // output simulation state if simulated time is next second
+  // output simulation state if simulated time is next second or if it is the
+  // first timestep
   if (std::floor(simulation_time_) !=
       std::floor(simulation_time_ - time_step_)) {
     outputSimulationState(simulation_time_);
@@ -366,6 +367,8 @@ void Simulation::runTimestep() {
 // run the full simulation
 void Simulation::run() {
   int stepNumber = 0;
+  boundaryManager_->setBoundaryConditionsVelocity();
+  outputSimulationState(0);
   while (simulation_time_ < settings_->endTime) {
 #ifndef NDEBUG
     std::cout << "[" << partitioning_->ownRankNo() << "] Simulation step "
